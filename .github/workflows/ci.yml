@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  stack-builds:
+    name: Docker stack builds
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start infrastructure
+        run: |
+          docker compose -f infrastructure/docker-compose.yml up -d
+          echo "Waiting for services to be healthy..."
+          sleep 20
+
+      - name: Check all containers are running
+        run: |
+          docker compose -f infrastructure/docker-compose.yml ps
+          # Fail if any container exited
+          docker compose -f infrastructure/docker-compose.yml ps --format json \
+            | python3 -c "
+          import json, sys
+          services = [json.loads(l) for l in sys.stdin if l.strip()]
+          failed = [s['Name'] for s in services if s.get('State') != 'running']
+          if failed:
+              print('FAILED containers:', failed)
+              sys.exit(1)
+          print('All containers running.')
+          "
+
+      - name: Verify Kafka topics were created
+        run: |
+          docker exec kafka kafka-topics --list --bootstrap-server kafka:9092
+
+      - name: Verify MySQL is accepting connections
+        run: |
+          docker exec mysql mysql -u appuser -papassword linkedin_db -e "SHOW TABLES;"
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f infrastructure/docker-compose.yml down -v
