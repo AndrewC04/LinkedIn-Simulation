@@ -6,12 +6,19 @@ Kafka event streaming, and an Agentic AI layer.
 ## Team
 
 Andrew (P1) | System Architect + Integration Lead 
+
 Surya (P2) | Database + Data Modeling 
+
 Raniel (P3) | Profile Service 
+
 Keon (P4) | Job Service 
+
 Rish (P5) | Application Service 
+
 Timmy (P6) | Messaging + Connections Service 
+
 Nishu (P7) | Kafka + Analytics 
+
 Saketh (P8) | Agentic AI + FastAPI 
 
 ## Quick Start (everyone runs this)

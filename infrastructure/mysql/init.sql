@@ -4,6 +4,12 @@
 CREATE DATABASE IF NOT EXISTS linkedin_db;
 USE linkedin_db;
 
+CREATE USER IF NOT EXISTS 'appuser'@'%' IDENTIFIED BY 'apassword';
+
+GRANT ALL PRIVILEGES ON linkedin_db.* TO 'appuser'@'%';
+
+FLUSH PRIVILEGES;
+
 -- Members (applicants)
 CREATE TABLE IF NOT EXISTS members (
     member_id    VARCHAR(36)  PRIMARY KEY,
