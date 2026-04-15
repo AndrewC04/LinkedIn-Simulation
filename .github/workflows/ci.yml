@@ -42,7 +42,7 @@ jobs:
 
       - name: Verify MySQL is accepting connections
         run: |
-          docker exec mysql mysql -u appuser -papassword linkedin_db -e "SHOW TABLES;"
+          docker exec mysql mysql -u appuser -papppassword linkedin_db -e "SHOW TABLES;"
 
       - name: Tear down
         if: always()
