@@ -5,3 +5,5 @@ redis
 confluent-kafka
 pydantic
 python-dotenv
+sqlalchemy
+pymysql
