@@ -110,6 +110,44 @@ services:
       REDIS_HOST: redis
     command: python worker.py
 
+  # ── Connections API (P6) ──
+  connection-api:
+    build:
+      context: ..
+      dockerfile: services/connection-service/Dockerfile
+    container_name: connection-api
+    depends_on:
+      - kafka
+      - mysql
+      - mongodb
+      - redis
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MYSQL_HOST: mysql
+      MONGO_HOST: mongodb
+      REDIS_HOST: redis
+    ports:
+      - "8007:8007"
+    command: uvicorn main:app --host 0.0.0.0 --port 8007
+
+  # ── Connections worker (P6) ──
+  connection-worker:
+    build:
+      context: ..
+      dockerfile: services/connection-service/Dockerfile
+    container_name: connection-worker
+    depends_on:
+      - kafka
+      - mysql
+      - mongodb
+      - redis
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MYSQL_HOST: mysql
+      MONGO_HOST: mongodb
+      REDIS_HOST: redis
+    command: python worker.py
+
 volumes:
   mysql_data:
   mongo_data:
