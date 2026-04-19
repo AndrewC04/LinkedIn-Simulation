@@ -1,23 +1,25 @@
 import React from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import { brand } from "../styles/theme.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 
-export default function LinkedInNav({ userType, onNavigate }) {
+export default function LinkedInNav({ userType }) {
   const { logout, user } = useAuth();
+  const navigate = useNavigate();
 
   const items =
     userType === "member"
       ? [
-          ["memberHome", "Home"],
-          ["jobSearch", "Jobs"],
-          ["myApplications", "My Applications"],
-          ["messages", "Messages"],
+          ["/member/home", "Home"],
+          ["/member/jobs", "Jobs"],
+          ["/member/applications", "My Applications"],
+          ["/member/messages", "Messages"],
         ]
       : [
-          ["recruiterHome", "Home"],
-          ["manageJobs", "Jobs"],
-          ["applicants", "Applicants"],
-          ["analytics", "Analytics"],
+          ["/recruiter/home", "Home"],
+          ["/recruiter/jobs", "Jobs"],
+          ["/recruiter/applications", "Applicants"],
+          ["/recruiter/analytics", "Analytics"],
         ];
 
   const styles = {
@@ -66,14 +68,17 @@ export default function LinkedInNav({ userType, onNavigate }) {
       gap: "8px",
       flexWrap: "wrap",
     },
-    button: {
-      background: "transparent",
-      border: "none",
+    link: {
+      textDecoration: "none",
       padding: "10px 12px",
       borderRadius: "999px",
-      cursor: "pointer",
       fontWeight: 600,
       color: "#4b5563",
+      transition: "all 0.2s ease",
+    },
+    activeLink: {
+      backgroundColor: "#e8f3ff",
+      color: brand.blue,
     },
     userPill: {
       border: `1px solid ${brand.border}`,
@@ -83,7 +88,22 @@ export default function LinkedInNav({ userType, onNavigate }) {
       fontWeight: 600,
       fontSize: "14px",
     },
+    logoutButton: {
+      border: `1px solid ${brand.border}`,
+      padding: "10px 14px",
+      borderRadius: "999px",
+      color: "#4b5563",
+      fontWeight: 600,
+      fontSize: "14px",
+      background: "white",
+      cursor: "pointer",
+    },
   };
+
+  function handleLogout() {
+    logout();
+    navigate("/");
+  }
 
   return (
     <div style={styles.nav}>
@@ -94,19 +114,22 @@ export default function LinkedInNav({ userType, onNavigate }) {
         </div>
 
         <div style={styles.right}>
-          {items.map(([key, label]) => (
-            <button key={key} style={styles.button} onClick={() => onNavigate(key)}>
+          {items.map(([path, label]) => (
+            <NavLink
+              key={path}
+              to={path}
+              style={({ isActive }) => ({
+                ...styles.link,
+                ...(isActive ? styles.activeLink : {}),
+              })}
+            >
               {label}
-            </button>
+            </NavLink>
           ))}
+
           <div style={styles.userPill}>{user?.displayName || user?.email}</div>
-          <button
-            style={styles.userPill}
-            onClick={() => {
-              logout();
-              onNavigate("home");
-            }}
-          >
+
+          <button style={styles.logoutButton} onClick={handleLogout}>
             Logout
           </button>
         </div>

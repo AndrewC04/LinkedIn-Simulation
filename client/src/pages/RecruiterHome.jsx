@@ -91,7 +91,11 @@ export default function RecruiterHome({ onNavigate }) {
 
   return (
     <div style={styles.page}>
-      <LinkedInNav userType="recruiter" onNavigate={onNavigate} />
+      <LinkedInNav
+        userType="recruiter"
+        onNavigate={onNavigate}
+        onLogout={() => onNavigate("auth")}
+      />
 
       <div style={styles.layout}>
         <LeftProfileRail role="recruiter" />
@@ -102,17 +106,34 @@ export default function RecruiterHome({ onNavigate }) {
               <div>
                 <div style={styles.title}>Recruiter Home</div>
                 <div style={styles.subtitle}>
-                  Organized around recruiter workflows: manage jobs, review applicants, update status, and leave notes.
+                  Organized around recruiter workflows: manage jobs, review applicants, update
+                  status, and leave notes.
                 </div>
               </div>
               <div style={styles.badge}>Recruiter Dashboard</div>
             </div>
 
             <div style={styles.grid}>
-              <FeatureCard title="Manage Job Postings" description="Create, update, close, and monitor job postings by recruiter." badge="Required" />
-              <FeatureCard title="Review Applicants" description="View submitted applications for a job and inspect candidate details." badge="Required" />
-              <FeatureCard title="Update Status" description="Move applications through submitted, reviewing, interview, offer, and rejected." badge="Required" />
-              <FeatureCard title="Add Recruiter Notes" description="Capture internal decision rationale and review comments for each application." badge="Required" />
+              <FeatureCard
+                title="Manage Job Postings"
+                description="Create, update, close, and monitor job postings by recruiter."
+                badge="Required"
+              />
+              <FeatureCard
+                title="Review Applicants"
+                description="View submitted applications for a job and inspect candidate details."
+                badge="Required"
+              />
+              <FeatureCard
+                title="Update Status"
+                description="Move applications through submitted, reviewing, interview, offer, and rejected."
+                badge="Required"
+              />
+              <FeatureCard
+                title="Add Recruiter Notes"
+                description="Capture internal decision rationale and review comments for each application."
+                badge="Required"
+              />
             </div>
           </div>
 
@@ -123,10 +144,18 @@ export default function RecruiterHome({ onNavigate }) {
             </div>
 
             <div style={styles.actions}>
-              <button style={styles.primaryBtn} onClick={() => onNavigate("manageJobs")}>Manage Jobs</button>
-              <button style={styles.secondaryBtn} onClick={() => onNavigate("applicants")}>View Applicants</button>
-              <button style={styles.secondaryBtn} onClick={() => onNavigate("statusUpdates")}>Update Status</button>
-              <button style={styles.secondaryBtn} onClick={() => onNavigate("notes")}>Add Note</button>
+              <button style={styles.primaryBtn} onClick={() => onNavigate("manageJobs")}>
+                Manage Jobs
+              </button>
+              <button style={styles.secondaryBtn} onClick={() => onNavigate("applicants")}>
+                View Applicants
+              </button>
+              <button style={styles.secondaryBtn} onClick={() => onNavigate("statusUpdates")}>
+                Update Status
+              </button>
+              <button style={styles.secondaryBtn} onClick={() => onNavigate("notes")}>
+                Add Note
+              </button>
             </div>
           </div>
         </div>

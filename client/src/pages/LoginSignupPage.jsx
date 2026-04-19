@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { brand } from "../styles/theme.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 
 export default function LoginSignupPage() {
   const { login, signup } = useAuth();
+  const navigate = useNavigate();
 
   const [tab, setTab] = useState("login");
   const [error, setError] = useState("");
@@ -156,11 +158,16 @@ export default function LoginSignupPage() {
 
     try {
       setLoading(true);
+
       await login({
         email: loginState.email,
         password: loginState.password,
         role: loginState.role,
       });
+
+      navigate(
+        loginState.role === "recruiter" ? "/recruiter/home" : "/member/home"
+      );
     } catch (err) {
       setError(err.message || "Login failed.");
     } finally {
@@ -194,6 +201,7 @@ export default function LoginSignupPage() {
 
     try {
       setLoading(true);
+
       await signup({
         role: signupState.role,
         email: signupState.email,
@@ -204,6 +212,10 @@ export default function LoginSignupPage() {
         companyId: signupState.companyId,
         companyName: signupState.companyName,
       });
+
+      navigate(
+        signupState.role === "recruiter" ? "/recruiter/home" : "/member/home"
+      );
     } catch (err) {
       setError(err.message || "Signup failed.");
     } finally {
@@ -224,6 +236,7 @@ export default function LoginSignupPage() {
 
           <div style={styles.tabRow}>
             <button
+              type="button"
               style={styles.tab(tab === "login")}
               onClick={() => {
                 setTab("login");
@@ -233,6 +246,7 @@ export default function LoginSignupPage() {
               Login
             </button>
             <button
+              type="button"
               style={styles.tab(tab === "signup")}
               onClick={() => {
                 setTab("signup");
@@ -250,12 +264,14 @@ export default function LoginSignupPage() {
               <div style={styles.label}>Role</div>
               <div style={styles.roleRow}>
                 <button
+                  type="button"
                   style={styles.roleBtn(loginState.role === "member")}
                   onClick={() => setLoginState({ ...loginState, role: "member" })}
                 >
                   Member
                 </button>
                 <button
+                  type="button"
                   style={styles.roleBtn(loginState.role === "recruiter")}
                   onClick={() => setLoginState({ ...loginState, role: "recruiter" })}
                 >
@@ -280,7 +296,7 @@ export default function LoginSignupPage() {
                 placeholder="Enter password"
               />
 
-              <button style={styles.button} onClick={handleLogin} disabled={loading}>
+              <button type="button" style={styles.button} onClick={handleLogin} disabled={loading}>
                 {loading ? "Signing In..." : "Sign In"}
               </button>
             </>
@@ -289,12 +305,14 @@ export default function LoginSignupPage() {
               <div style={styles.label}>Role</div>
               <div style={styles.roleRow}>
                 <button
+                  type="button"
                   style={styles.roleBtn(signupState.role === "member")}
                   onClick={() => setSignupState({ ...signupState, role: "member" })}
                 >
                   Member
                 </button>
                 <button
+                  type="button"
                   style={styles.roleBtn(signupState.role === "recruiter")}
                   onClick={() => setSignupState({ ...signupState, role: "recruiter" })}
                 >
@@ -363,7 +381,7 @@ export default function LoginSignupPage() {
                 </>
               ) : null}
 
-              <button style={styles.button} onClick={handleSignup} disabled={loading}>
+              <button type="button" style={styles.button} onClick={handleSignup} disabled={loading}>
                 {loading ? "Creating Account..." : "Create Account"}
               </button>
             </>

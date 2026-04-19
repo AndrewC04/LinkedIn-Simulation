@@ -8,3 +8,6 @@ client/node_modules/
 # Python
 .venv/
 __pycache__/
+
+uploads/
+services/application-service/uploads
