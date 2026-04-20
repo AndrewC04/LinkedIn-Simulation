@@ -1,21 +1,64 @@
-const API_BASE = "http://localhost:8000";
+const AUTH_API = "http://localhost:8005";
+const APPLICATIONS_API = "http://localhost:8005";
+const JOBS_API = "http://localhost:8010";
 
-export const session = {
-  token: "demo-token",
-  memberId: "member-1001",
-  recruiterId: "recruiter-2001",
-  role: "member", // switch to recruiter to test recruiter pages
-};
+const SESSION_KEY = "linkedin_sim_auth_session";
+
+/* ---------------------------
+   Session helpers
+---------------------------- */
+
+function getStoredSession() {
+  const raw = localStorage.getItem(SESSION_KEY);
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    localStorage.removeItem(SESSION_KEY);
+    return null;
+  }
+}
 
 function authHeaders(extra = {}) {
+  const session = getStoredSession();
+
   return {
-    Authorization: `Bearer ${session.token}`,
+    ...(session?.token
+      ? { Authorization: `Bearer ${session.token}` }
+      : {}),
     ...extra,
   };
 }
 
-async function postJson(path, body) {
-  const res = await fetch(`${API_BASE}${path}`, {
+/* ---------------------------
+   Error handling
+---------------------------- */
+
+function extractErrorMessage(data, status) {
+  if (!data) return `Request failed: ${status}`;
+
+  if (typeof data.detail === "string") {
+    return data.detail;
+  }
+
+  if (Array.isArray(data.detail)) {
+    return data.detail.map((item) => item?.msg || "Invalid request").join(", ");
+  }
+
+  if (typeof data.message === "string") {
+    return data.message;
+  }
+
+  return `Request failed: ${status}`;
+}
+
+/* ---------------------------
+   Core POST helper
+---------------------------- */
+
+async function postJson(baseUrl, path, body) {
+  const res = await fetch(`${baseUrl}${path}`, {
     method: "POST",
     headers: authHeaders({
       "Content-Type": "application/json",
@@ -23,16 +66,31 @@ async function postJson(path, body) {
     body: JSON.stringify(body),
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Request failed: ${res.status}`);
+  let data = null;
+
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
   }
 
-  return res.json();
+  if (!res.ok) {
+    throw new Error(extractErrorMessage(data, res.status));
+  }
+
+  return data;
 }
 
-export async function applicationsByMember(memberId, page = 1, pageSize = 25) {
-  return postJson("/applications/byMember", {
+/* ---------------------------
+   APPLICATIONS
+---------------------------- */
+
+export async function applicationsByMember(
+  memberId,
+  page = 1,
+  pageSize = 25
+) {
+  return postJson(APPLICATIONS_API, "/applications/byMember", {
     member_id: memberId,
     page,
     page_size: pageSize,
@@ -40,13 +98,18 @@ export async function applicationsByMember(memberId, page = 1, pageSize = 25) {
 }
 
 export async function applicationGet(applicationId) {
-  return postJson("/applications/get", {
+  return postJson(APPLICATIONS_API, "/applications/get", {
     application_id: applicationId,
   });
 }
 
-export async function applicationsByJob(jobId, statusFilter = null, page = 1, pageSize = 25) {
-  return postJson("/applications/byJob", {
+export async function applicationsByJob(
+  jobId,
+  statusFilter = null,
+  page = 1,
+  pageSize = 25
+) {
+  return postJson(APPLICATIONS_API, "/applications/byJob", {
     job_id: jobId,
     status_filter: statusFilter,
     page,
@@ -54,26 +117,46 @@ export async function applicationsByJob(jobId, statusFilter = null, page = 1, pa
   });
 }
 
-export async function applicationUpdateStatus(applicationId, status, reason = "") {
-  return postJson("/applications/updateStatus", {
+export async function applicationUpdateStatus(
+  applicationId,
+  status,
+  reason = ""
+) {
+  return postJson(APPLICATIONS_API, "/applications/updateStatus", {
     application_id: applicationId,
     status,
     reason,
   });
 }
 
-export async function applicationAddNote(applicationId, recruiterId, note) {
-  return postJson("/applications/addNote", {
+export async function applicationAddNote(
+  applicationId,
+  recruiterId,
+  note
+) {
+  return postJson(APPLICATIONS_API, "/applications/addNote", {
     application_id: applicationId,
     recruiter_id: recruiterId,
     note,
   });
 }
 
-export async function recruiterJobs() {
-  return [
-    { job_id: "job-101", title: "Frontend Engineer", company_name: "LinkedHire" },
-    { job_id: "job-102", title: "Backend Engineer", company_name: "LinkedHire" },
-    { job_id: "job-103", title: "Product Designer", company_name: "LinkedHire" },
-  ];
+/* ---------------------------
+   JOBS (Recruiter)
+---------------------------- */
+
+export async function recruiterJobs(
+  recruiterId,
+  statusFilter = null,
+  page = 1,
+  pageSize = 20
+) {
+  return postJson(JOBS_API, "/jobs/byRecruiter", {
+    recruiter_id: recruiterId,
+    status_filter: statusFilter,
+    pagination: {
+      page,
+      page_size: pageSize,
+    },
+  });
 }

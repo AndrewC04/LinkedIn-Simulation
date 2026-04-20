@@ -21,14 +21,16 @@ class Settings(BaseModel):
     kafka_enabled: bool = os.getenv("KAFKA_ENABLED", "false").lower() == "true"
 
     job_service_host: str = os.getenv("JOB_SERVICE_HOST", "0.0.0.0")
-    job_service_port: int = int(os.getenv("JOB_SERVICE_PORT", "8002"))
+    job_service_port: int = int(os.getenv("JOB_SERVICE_PORT", "8010"))
+
+    database_url: str = os.getenv(
+    "DATABASE_URL",
+    "mysql+pymysql://appuser:apppassword@localhost:3306/linkedin_db",
+    )
 
     @property
     def sqlalchemy_url(self) -> str:
-        return (
-            f"mysql+pymysql://{self.mysql_user}:{self.mysql_password}"
-            f"@{self.mysql_host}:{self.mysql_port}/{self.mysql_database}"
-        )
+        return self.database_url
 
 
 settings = Settings()

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { applicationsByMember, session } from "../api/applicationApi";
+import { applicationsByMember } from "../api/applicationApi";
 import LinkedInNav from "../components/LinkedInNav.jsx";
+import { useAuth } from "../auth/AuthContext.jsx";
 
 function StatusBadge({ status }) {
   const styles = {
@@ -15,7 +16,11 @@ function StatusBadge({ status }) {
   return (
     <span
       style={{
-        ...(styles[status] || { background: "#f3f4f6", color: "#374151", border: "1px solid #d1d5db" }),
+        ...(styles[status] || {
+          background: "#f3f4f6",
+          color: "#374151",
+          border: "1px solid #d1d5db",
+        }),
         display: "inline-flex",
         padding: "6px 12px",
         borderRadius: "999px",
@@ -30,8 +35,12 @@ function StatusBadge({ status }) {
 }
 
 export default function ViewMyApplications() {
+  const { user } = useAuth();
+  const memberId = user?.userId;
+
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const styles = {
     page: {
@@ -62,6 +71,32 @@ export default function ViewMyApplications() {
       marginTop: "8px",
       fontSize: "14px",
       color: "#5e6a75",
+      lineHeight: 1.6,
+    },
+    controlsRow: {
+      marginTop: "18px",
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      flexWrap: "wrap",
+    },
+    controlLabel: {
+      fontSize: "14px",
+      fontWeight: 700,
+      color: "#1d2226",
+    },
+    select: {
+      minWidth: "240px",
+      padding: "12px 14px",
+      borderRadius: "10px",
+      border: "1px solid #cfd8e3",
+      fontSize: "14px",
+      backgroundColor: "#fff",
+      outline: "none",
+    },
+    helperText: {
+      fontSize: "13px",
+      color: "#6b7280",
     },
     tableCard: {
       backgroundColor: "#fff",
@@ -108,18 +143,29 @@ export default function ViewMyApplications() {
 
   useEffect(() => {
     async function load() {
+      if (!memberId) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const data = await applicationsByMember(session.userId || session.memberId);
+        const data = await applicationsByMember(memberId, 1, 50);
         setApplications(data.applications || []);
       } catch (err) {
-        alert(err.message);
+        console.error("Failed to load applications:", err);
+        alert(err.message || "Failed to load applications.");
       } finally {
         setLoading(false);
       }
     }
 
     load();
-  }, []);
+  }, [memberId]);
+
+  const filteredApplications = useMemo(() => {
+    if (statusFilter === "all") return applications;
+    return applications.filter((app) => app.status === statusFilter);
+  }, [applications, statusFilter]);
 
   return (
     <div style={styles.page}>
@@ -129,15 +175,39 @@ export default function ViewMyApplications() {
         <div style={styles.headerCard}>
           <h1 style={styles.title}>View My Applications</h1>
           <p style={styles.subtitle}>
-            Review all of your submitted applications in one clean list.
+            Review all of your submitted applications and filter them by status in one place.
           </p>
+
+          <div style={styles.controlsRow}>
+            <div style={styles.controlLabel}>Filter by status</div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={styles.select}
+            >
+              <option value="all">All statuses</option>
+              <option value="submitted">Submitted</option>
+              <option value="reviewing">Reviewing</option>
+              <option value="interview">Interview</option>
+              <option value="offer">Offer</option>
+              <option value="rejected">Rejected</option>
+            </select>
+
+            <div style={styles.helperText}>
+              Showing {filteredApplications.length} of {applications.length} applications
+            </div>
+          </div>
         </div>
 
         <div style={styles.tableCard}>
           {loading ? (
             <div style={styles.empty}>Loading applications...</div>
-          ) : applications.length === 0 ? (
-            <div style={styles.empty}>No applications found.</div>
+          ) : filteredApplications.length === 0 ? (
+            <div style={styles.empty}>
+              {applications.length === 0
+                ? "No applications found."
+                : "No applications match this status."}
+            </div>
           ) : (
             <div style={styles.tableWrap}>
               <table style={styles.table}>
@@ -151,17 +221,19 @@ export default function ViewMyApplications() {
                   </tr>
                 </thead>
                 <tbody>
-                  {applications.map((app) => (
+                  {filteredApplications.map((app) => (
                     <tr key={app.application_id}>
                       <td style={{ ...styles.td, fontWeight: 700, color: "#1d2226" }}>
-                        {app.job_title}
+                        {app.job_title || "Untitled Job"}
                       </td>
-                      <td style={styles.td}>{app.company_name}</td>
+                      <td style={styles.td}>{app.company_name || "Company"}</td>
                       <td style={styles.td}>
                         <StatusBadge status={app.status} />
                       </td>
                       <td style={styles.td}>
-                        {new Date(app.submitted_at).toLocaleString()}
+                        {app.submitted_at
+                          ? new Date(app.submitted_at).toLocaleString()
+                          : "N/A"}
                       </td>
                       <td style={styles.td}>
                         <Link

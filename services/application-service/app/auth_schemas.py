@@ -1,27 +1,29 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 
 class MemberSignupRequest(BaseModel):
-    first_name: str
-    last_name: str
+    model_config = ConfigDict(populate_by_name=True)
+
+    first_name: str = Field(alias="firstName")
+    last_name: str = Field(alias="lastName")
     email: EmailStr
     password: str
 
 
 class RecruiterSignupRequest(BaseModel):
-    recruiter_id: str
-    company_id: str
-    first_name: str
-    last_name: str
+    model_config = ConfigDict(populate_by_name=True)
+
+    first_name: str = Field(alias="firstName")
+    last_name: str = Field(alias="lastName")
     email: EmailStr
-    company_name: str
+    company_name: str = Field(alias="companyName")
     password: str
 
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
-    role: str  # "member" or "recruiter"
+    role: str
 
 
 class AuthResponse(BaseModel):
@@ -30,3 +32,5 @@ class AuthResponse(BaseModel):
     role: str
     first_name: str
     last_name: str
+    access_token: str
+    token_type: str = "bearer"

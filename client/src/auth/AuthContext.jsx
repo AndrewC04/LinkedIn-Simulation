@@ -21,16 +21,39 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  function extractErrorMessage(data, fallback) {
+    if (!data) return fallback;
+
+    if (typeof data.detail === "string") {
+      return data.detail;
+    }
+
+    if (Array.isArray(data.detail)) {
+      return data.detail.map((item) => item?.msg || "Invalid request").join(", ");
+    }
+
+    if (typeof data.message === "string") {
+      return data.message;
+    }
+
+    return fallback;
+  }
+
   async function login({ email, password, role }) {
     const res = await fetch(`${API}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, role }),
+      body: JSON.stringify({
+        email,
+        password,
+        role,
+      }),
     });
 
     const data = await res.json();
+
     if (!res.ok) {
-      throw new Error(data.detail || "Login failed");
+      throw new Error(extractErrorMessage(data, "Login failed"));
     }
 
     const sessionUser = {
@@ -40,6 +63,7 @@ export function AuthProvider({ children }) {
       firstName: data.first_name,
       lastName: data.last_name,
       displayName: `${data.first_name} ${data.last_name}`.trim(),
+      token: data.access_token,
     };
 
     setUser(sessionUser);
@@ -47,26 +71,26 @@ export function AuthProvider({ children }) {
   }
 
   async function signup(payload) {
-    const endpoint =
-      payload.role === "member" ? "/auth/signup/member" : "/auth/signup/recruiter";
+    const isRecruiter = payload.role === "recruiter";
 
-    const requestBody =
-      payload.role === "member"
-        ? {
-            first_name: payload.firstName,
-            last_name: payload.lastName,
-            email: payload.email,
-            password: payload.password,
-          }
-        : {
-            recruiter_id: payload.recruiterId,
-            company_id: payload.companyId,
-            first_name: payload.firstName,
-            last_name: payload.lastName,
-            email: payload.email,
-            company_name: payload.companyName,
-            password: payload.password,
-          };
+    const endpoint = isRecruiter
+      ? "/auth/signup/recruiter"
+      : "/auth/signup/member";
+
+    const requestBody = isRecruiter
+      ? {
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          email: payload.email,
+          companyName: payload.companyName,
+          password: payload.password,
+        }
+      : {
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          email: payload.email,
+          password: payload.password,
+        };
 
     const res = await fetch(`${API}${endpoint}`, {
       method: "POST",
@@ -75,8 +99,9 @@ export function AuthProvider({ children }) {
     });
 
     const data = await res.json();
+
     if (!res.ok) {
-      throw new Error(data.detail || "Signup failed");
+      throw new Error(extractErrorMessage(data, "Signup failed"));
     }
 
     const sessionUser = {
@@ -86,6 +111,7 @@ export function AuthProvider({ children }) {
       firstName: data.first_name,
       lastName: data.last_name,
       displayName: `${data.first_name} ${data.last_name}`.trim(),
+      token: data.access_token,
     };
 
     setUser(sessionUser);

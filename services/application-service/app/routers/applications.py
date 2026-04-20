@@ -123,10 +123,15 @@ def get_application(
 
     notes = crud.get_notes_for_application(db, payload.application_id)
 
+    job_title, _company_name = crud.get_job_summary(db, application.job_id)
+    member_name = crud.get_member_name(db, application.member_id)
+
     return GetApplicationResponse(
         application_id=application.application_id,
         job_id=application.job_id,
+        job_title=job_title,
         member_id=application.member_id,
+        member_name=member_name,
         resume_url=application.resume_url,
         cover_letter=application.cover_letter,
         status=application.status,

@@ -40,7 +40,9 @@ class NoteResponse(BaseModel):
 class GetApplicationResponse(BaseModel):
     application_id: str
     job_id: str
+    job_title: str
     member_id: str
+    member_name: str
     resume_url: str | None
     cover_letter: str | None
     status: ApplicationStatus

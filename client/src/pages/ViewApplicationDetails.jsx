@@ -1,135 +1,352 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { applicationGet } from "../api/applicationApi";
+import LinkedInNav from "../components/LinkedInNav.jsx";
 
 function StatusBadge({ status }) {
   const styles = {
-    submitted: "bg-blue-50 text-blue-700 border-blue-200",
-    reviewing: "bg-amber-50 text-amber-700 border-amber-200",
-    interview: "bg-violet-50 text-violet-700 border-violet-200",
-    offer: "bg-green-50 text-green-700 border-green-200",
-    rejected: "bg-rose-50 text-rose-700 border-rose-200",
+    submitted: {
+      background: "#e8f3ff",
+      color: "#0a66c2",
+      border: "1px solid #cfe5ff",
+    },
+    reviewing: {
+      background: "#fff7e6",
+      color: "#b26b00",
+      border: "1px solid #f6ddb0",
+    },
+    interview: {
+      background: "#f3e8ff",
+      color: "#7c3aed",
+      border: "1px solid #dfc8ff",
+    },
+    offer: {
+      background: "#e8f7ee",
+      color: "#15803d",
+      border: "1px solid #c7ebd3",
+    },
+    rejected: {
+      background: "#fff1f2",
+      color: "#be123c",
+      border: "1px solid #fecdd3",
+    },
   };
 
   return (
-    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold capitalize ${styles[status] || "bg-slate-50 text-slate-700 border-slate-200"}`}>
+    <span
+      style={{
+        ...(styles[status] || {
+          background: "#f3f4f6",
+          color: "#374151",
+          border: "1px solid #d1d5db",
+        }),
+        display: "inline-flex",
+        padding: "6px 12px",
+        borderRadius: "999px",
+        fontSize: "12px",
+        fontWeight: 700,
+        textTransform: "capitalize",
+      }}
+    >
       {status}
     </span>
   );
 }
 
-export default function ViewApplicationDetailsPage() {
+export default function ViewApplicationDetails() {
   const { applicationId } = useParams();
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const styles = {
+    page: {
+      minHeight: "100vh",
+      backgroundColor: "#f3f2ef",
+      fontFamily: "Arial, Helvetica, sans-serif",
+    },
+    container: {
+      maxWidth: "1128px",
+      margin: "0 auto",
+      padding: "24px 16px 40px",
+    },
+    headerCard: {
+      backgroundColor: "#fff",
+      border: "1px solid #d9dee3",
+      borderRadius: "16px",
+      padding: "26px 28px",
+      boxShadow: "0 1px 2px rgba(0,0,0,0.07)",
+      marginBottom: "22px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: "16px",
+      flexWrap: "wrap",
+    },
+    title: {
+      margin: 0,
+      fontSize: "30px",
+      fontWeight: 700,
+      color: "#1d2226",
+    },
+    subtitle: {
+      marginTop: "8px",
+      fontSize: "14px",
+      color: "#5e6a75",
+      lineHeight: 1.5,
+    },
+    backButton: {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "10px 18px",
+      borderRadius: "999px",
+      border: "1px solid #cfd6dc",
+      backgroundColor: "#fff",
+      color: "#334155",
+      textDecoration: "none",
+      fontSize: "14px",
+      fontWeight: 700,
+      whiteSpace: "nowrap",
+    },
+    card: {
+      backgroundColor: "#fff",
+      border: "1px solid #d9dee3",
+      borderRadius: "16px",
+      boxShadow: "0 1px 2px rgba(0,0,0,0.07)",
+      overflow: "hidden",
+      marginBottom: "22px",
+    },
+    section: {
+      padding: "24px 28px",
+    },
+    sectionHeader: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: "16px",
+      marginBottom: "22px",
+      flexWrap: "wrap",
+    },
+    sectionTitle: {
+      margin: 0,
+      fontSize: "22px",
+      fontWeight: 700,
+      color: "#1d2226",
+    },
+    subtext: {
+      marginTop: "4px",
+      fontSize: "14px",
+      color: "#5e6a75",
+    },
+    grid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+      gap: "22px 28px",
+    },
+    label: {
+      fontSize: "13px",
+      color: "#6b7280",
+      fontWeight: 600,
+      marginBottom: "6px",
+    },
+    value: {
+      fontSize: "14px",
+      color: "#1d2226",
+      lineHeight: 1.5,
+    },
+    link: {
+      color: "#0a66c2",
+      fontWeight: 700,
+      textDecoration: "none",
+    },
+    divider: {
+      height: "1px",
+      backgroundColor: "#eef1f4",
+      margin: 0,
+      border: 0,
+    },
+    noteList: {
+      display: "grid",
+      gap: "14px",
+    },
+    noteCard: {
+      backgroundColor: "#f8fafc",
+      border: "1px solid #e6ebf0",
+      borderRadius: "12px",
+      padding: "16px 18px",
+    },
+    noteText: {
+      margin: 0,
+      fontSize: "14px",
+      color: "#1f2937",
+      lineHeight: 1.6,
+      fontWeight: 500,
+    },
+    noteMeta: {
+      marginTop: "10px",
+      fontSize: "12px",
+      color: "#6b7280",
+    },
+    empty: {
+      color: "#6b7280",
+      fontSize: "14px",
+    },
+  };
 
   useEffect(() => {
     async function load() {
       try {
         const data = await applicationGet(applicationId);
+        console.log("application details response:", data);
         setApplication(data);
       } catch (err) {
-        alert(err.message);
+        console.error("Failed to load application:", err);
+        alert(err.message || "Failed to load application.");
       } finally {
         setLoading(false);
       }
     }
 
-    load();
+    if (applicationId) {
+      load();
+    } else {
+      setLoading(false);
+    }
   }, [applicationId]);
 
+  function renderDetail(label, value) {
+    return (
+      <div>
+        <div style={styles.label}>{label}</div>
+        <div style={styles.value}>{value}</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#f3f2ef] p-6">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-6 flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div style={styles.page}>
+      <LinkedInNav userType="member" />
+
+      <div style={styles.container}>
+        <div style={styles.headerCard}>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">View Application Details</h1>
-            <p className="mt-2 text-sm text-slate-500">
-              Open one application and review files and status.
+            <h1 style={styles.title}>Application Details</h1>
+            <p style={styles.subtitle}>
+              Review your application, open submitted files, and check the current status.
             </p>
           </div>
-          <Link
-            to="/member/applications/view"
-            className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
+
+          <Link to="/member/applications" style={styles.backButton}>
             Back
           </Link>
         </div>
 
         {loading ? (
-          <p className="text-sm text-slate-500">Loading application...</p>
+          <div style={styles.card}>
+            <div style={styles.section}>
+              <div style={styles.empty}>Loading application...</div>
+            </div>
+          </div>
+        ) : !application ? (
+          <div style={styles.card}>
+            <div style={styles.section}>
+              <div style={styles.empty}>Application not found.</div>
+            </div>
+          </div>
         ) : (
-          <div className="space-y-6">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
+          <div style={styles.card}>
+            <div style={styles.section}>
+              <div style={styles.sectionHeader}>
                 <div>
-                  <div className="text-sm text-slate-500">Application ID</div>
-                  <div className="mt-1 text-lg font-semibold text-slate-900">
-                    {application.application_id}
+                  <h2 style={styles.sectionTitle}>
+                    {application.job_title || application.job_id || "Job"}
+                  </h2>
+                  <div style={styles.subtext}>
+                    Member: {application.member_name || application.member_id || "Member"}
                   </div>
                 </div>
+
                 <StatusBadge status={application.status} />
               </div>
 
-              <div className="mt-6 grid gap-5 md:grid-cols-2">
-                <div>
-                  <div className="text-sm text-slate-500">Job ID</div>
-                  <div className="mt-1 font-medium text-slate-900">{application.job_id}</div>
-                </div>
+              <div style={styles.grid}>
+                {renderDetail(
+                  "Job Name",
+                  application.job_title || application.job_id || "N/A"
+                )}
+                {renderDetail(
+                  "Member Name",
+                  application.member_name || application.member_id || "N/A"
+                )}
+                {renderDetail(
+                  "Submitted",
+                  application.submitted_at
+                    ? new Date(application.submitted_at).toLocaleString()
+                    : "N/A"
+                )}
 
                 <div>
-                  <div className="text-sm text-slate-500">Member ID</div>
-                  <div className="mt-1 font-medium text-slate-900">{application.member_id}</div>
-                </div>
-
-                <div>
-                  <div className="text-sm text-slate-500">Submitted</div>
-                  <div className="mt-1 text-slate-900">
-                    {new Date(application.submitted_at).toLocaleString()}
+                  <div style={styles.label}>Resume</div>
+                  <div style={styles.value}>
+                    {application.resume_url ? (
+                      <a
+                        href={`http://localhost:8000${application.resume_url}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={styles.link}
+                      >
+                        Open Resume
+                      </a>
+                    ) : (
+                      "Not provided"
+                    )}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-sm text-slate-500">Resume</div>
-                  <a
-                    href={`http://localhost:8000${application.resume_url}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-1 block font-semibold text-[#0A66C2] hover:underline"
-                  >
-                    Open Resume
-                  </a>
-                </div>
-
-                <div>
-                  <div className="text-sm text-slate-500">Cover Letter</div>
-                  {application.cover_letter ? (
-                    <a
-                      href={`http://localhost:8000${application.cover_letter}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-1 block font-semibold text-[#0A66C2] hover:underline"
-                    >
-                      Open Cover Letter
-                    </a>
-                  ) : (
-                    <div className="mt-1 text-slate-500">Not provided</div>
-                  )}
+                  <div style={styles.label}>Cover Letter</div>
+                  <div style={styles.value}>
+                    {application.cover_letter ? (
+                      <a
+                        href={`http://localhost:8000${application.cover_letter}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={styles.link}
+                      >
+                        Open Cover Letter
+                      </a>
+                    ) : (
+                      "Not provided"
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Notes</h2>
+            <hr style={styles.divider} />
+
+            <div style={styles.section}>
+              <h3
+                style={{
+                  margin: "0 0 14px",
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  color: "#1d2226",
+                }}
+              >
+                Notes
+              </h3>
+
               {!application.notes || application.notes.length === 0 ? (
-                <p className="mt-3 text-sm text-slate-500">No notes available.</p>
+                <div style={styles.empty}>No notes available.</div>
               ) : (
-                <div className="mt-4 space-y-3">
+                <div style={styles.noteList}>
                   {application.notes.map((note) => (
-                    <div key={note.note_id} className="rounded-xl bg-slate-50 p-4">
-                      <div className="text-sm font-medium text-slate-800">{note.note}</div>
-                      <div className="mt-2 text-xs text-slate-500">
-                        {note.recruiter_id} • {new Date(note.created_at).toLocaleString()}
+                    <div key={note.note_id} style={styles.noteCard}>
+                      <p style={styles.noteText}>{note.note}</p>
+                      <div style={styles.noteMeta}>
+                        {note.recruiter_id} •{" "}
+                        {new Date(note.created_at).toLocaleString()}
                       </div>
                     </div>
                   ))}

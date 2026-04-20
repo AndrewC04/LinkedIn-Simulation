@@ -1,8 +1,47 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { applicationsByMember } from "../api/applicationApi";
 import LinkedInNav from "../components/LinkedInNav.jsx";
+import { useAuth } from "../auth/AuthContext.jsx";
+
+function StatusBadge({ status }) {
+  const styles = {
+    submitted: { background: "#e8f3ff", color: "#0a66c2", border: "1px solid #cfe5ff" },
+    reviewing: { background: "#fff7e6", color: "#b26b00", border: "1px solid #f6ddb0" },
+    interview: { background: "#f3e8ff", color: "#7c3aed", border: "1px solid #dfc8ff" },
+    offer: { background: "#e8f7ee", color: "#15803d", border: "1px solid #c7ebd3" },
+    rejected: { background: "#fff1f2", color: "#be123c", border: "1px solid #fecdd3" },
+  };
+
+  return (
+    <span
+      style={{
+        ...(styles[status] || {
+          background: "#f3f4f6",
+          color: "#374151",
+          border: "1px solid #d1d5db",
+        }),
+        display: "inline-flex",
+        padding: "6px 12px",
+        borderRadius: "999px",
+        fontSize: "12px",
+        fontWeight: 700,
+        textTransform: "capitalize",
+      }}
+    >
+      {status}
+    </span>
+  );
+}
 
 export default function MemberAppHome() {
+  const { user } = useAuth();
+  const memberId = user?.userId;
+
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("all");
+
   const styles = {
     page: {
       minHeight: "100vh",
@@ -14,152 +53,204 @@ export default function MemberAppHome() {
       margin: "0 auto",
       padding: "24px 16px 40px",
     },
-    heroCard: {
-      backgroundColor: "#ffffff",
+    headerCard: {
+      backgroundColor: "#fff",
       border: "1px solid #d9dee3",
       borderRadius: "16px",
-      padding: "28px",
-      boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+      padding: "26px 28px",
+      boxShadow: "0 1px 2px rgba(0,0,0,0.07)",
       marginBottom: "22px",
     },
-    heroTitle: {
+    title: {
       margin: 0,
-      fontSize: "32px",
+      fontSize: "30px",
       fontWeight: 700,
       color: "#1d2226",
-      letterSpacing: "-0.02em",
     },
-    heroText: {
-      marginTop: "10px",
-      fontSize: "15px",
+    subtitle: {
+      marginTop: "8px",
+      fontSize: "14px",
       color: "#5e6a75",
       lineHeight: 1.6,
-      maxWidth: "720px",
     },
-    sectionTitle: {
-      fontSize: "20px",
-      fontWeight: 700,
-      color: "#1d2226",
-      margin: "0 0 14px 2px",
-    },
-    cardGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-      gap: "20px",
-    },
-    actionCard: {
-      backgroundColor: "#ffffff",
-      border: "1px solid #d9dee3",
-      borderRadius: "16px",
-      padding: "24px",
-      boxShadow: "0 1px 2px rgba(0,0,0,0.07)",
-      textDecoration: "none",
-      color: "inherit",
-      transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
-      display: "block",
-    },
-    actionTop: {
+    controlsRow: {
+      marginTop: "18px",
       display: "flex",
       alignItems: "center",
       gap: "12px",
-      marginBottom: "14px",
+      flexWrap: "wrap",
     },
-    actionIcon: {
-      width: "46px",
-      height: "46px",
-      borderRadius: "12px",
-      backgroundColor: "#e8f3ff",
-      color: "#0a66c2",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontWeight: 700,
-      fontSize: "18px",
-      flexShrink: 0,
-    },
-    actionTitle: {
-      margin: 0,
-      fontSize: "20px",
+    controlLabel: {
+      fontSize: "14px",
       fontWeight: 700,
       color: "#1d2226",
     },
-    actionText: {
-      margin: 0,
-      color: "#5e6a75",
+    select: {
+      minWidth: "240px",
+      padding: "12px 14px",
+      borderRadius: "10px",
+      border: "1px solid #cfd8e3",
       fontSize: "14px",
-      lineHeight: 1.6,
+      backgroundColor: "#fff",
+      outline: "none",
     },
-    actionFooter: {
-      marginTop: "18px",
-      color: "#0a66c2",
-      fontSize: "14px",
+    helperText: {
+      fontSize: "13px",
+      color: "#6b7280",
+    },
+    tableCard: {
+      backgroundColor: "#fff",
+      border: "1px solid #d9dee3",
+      borderRadius: "16px",
+      boxShadow: "0 1px 2px rgba(0,0,0,0.07)",
+      overflow: "hidden",
+    },
+    tableWrap: {
+      overflowX: "auto",
+    },
+    table: {
+      width: "100%",
+      minWidth: "760px",
+      borderCollapse: "collapse",
+    },
+    th: {
+      textAlign: "left",
+      padding: "16px 20px",
+      fontSize: "13px",
+      color: "#6b7280",
       fontWeight: 700,
+      borderBottom: "1px solid #e5e7eb",
+      backgroundColor: "#fafafa",
+    },
+    td: {
+      padding: "18px 20px",
+      borderBottom: "1px solid #eef1f4",
+      fontSize: "14px",
+      color: "#334155",
+      verticalAlign: "middle",
+    },
+    link: {
+      color: "#0a66c2",
+      fontWeight: 700,
+      textDecoration: "none",
+    },
+    empty: {
+      padding: "28px",
+      color: "#6b7280",
+      fontSize: "14px",
     },
   };
 
-  const hoverIn = (e) => {
-    e.currentTarget.style.transform = "translateY(-2px)";
-    e.currentTarget.style.boxShadow = "0 10px 22px rgba(0,0,0,0.10)";
-    e.currentTarget.style.borderColor = "#b9d6f2";
-  };
+  useEffect(() => {
+    async function load() {
+      if (!memberId) {
+        setLoading(false);
+        return;
+      }
 
-  const hoverOut = (e) => {
-    e.currentTarget.style.transform = "translateY(0)";
-    e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.07)";
-    e.currentTarget.style.borderColor = "#d9dee3";
-  };
+      try {
+        const data = await applicationsByMember(memberId, 1, 50);
+        console.log("memberId:", memberId);
+        console.log("applications response:", data);
+        setApplications(data.applications || []);
+      } catch (err) {
+        console.error("Failed to load applications:", err);
+        alert(err.message || "Failed to load applications.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [memberId]);
+
+  const filteredApplications = useMemo(() => {
+    if (statusFilter === "all") return applications;
+    return applications.filter((app) => app.status === statusFilter);
+  }, [applications, statusFilter]);
 
   return (
     <div style={styles.page}>
       <LinkedInNav userType="member" />
 
       <div style={styles.container}>
-        <div style={styles.heroCard}>
-          <h1 style={styles.heroTitle}>My Applications</h1>
-          <p style={styles.heroText}>
-            View your submitted applications, open details, and filter by status
-            with a clean application workflow.
+        <div style={styles.headerCard}>
+          <h1 style={styles.title}>View My Applications</h1>
+          <p style={styles.subtitle}>
+            Review all of your submitted applications and filter them by status in one place.
           </p>
+
+          <div style={styles.controlsRow}>
+            <div style={styles.controlLabel}>Filter by status</div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={styles.select}
+            >
+              <option value="all">All statuses</option>
+              <option value="submitted">Submitted</option>
+              <option value="reviewing">Reviewing</option>
+              <option value="interview">Interview</option>
+              <option value="offer">Offer</option>
+              <option value="rejected">Rejected</option>
+            </select>
+
+            <div style={styles.helperText}>
+              Showing {filteredApplications.length} of {applications.length} applications
+            </div>
+          </div>
         </div>
 
-        <div>
-          <div style={styles.sectionTitle}>Application tools</div>
-
-          <div style={styles.cardGrid}>
-            <Link
-              to="/member/applications/view"
-              style={styles.actionCard}
-              onMouseEnter={hoverIn}
-              onMouseLeave={hoverOut}
-            >
-              <div style={styles.actionTop}>
-                <div style={styles.actionIcon}>VA</div>
-                <h2 style={styles.actionTitle}>View My Applications</h2>
-              </div>
-              <p style={styles.actionText}>
-                See every application you’ve submitted, along with company,
-                status, and submission date.
-              </p>
-              <div style={styles.actionFooter}>Open applications list</div>
-            </Link>
-
-            <Link
-              to="/member/applications/filter"
-              style={styles.actionCard}
-              onMouseEnter={hoverIn}
-              onMouseLeave={hoverOut}
-            >
-              <div style={styles.actionTop}>
-                <div style={styles.actionIcon}>FS</div>
-                <h2 style={styles.actionTitle}>Filter by Status</h2>
-              </div>
-              <p style={styles.actionText}>
-                Focus on just the applications you want to review, such as
-                submitted, reviewing, interview, offer, or rejected.
-              </p>
-              <div style={styles.actionFooter}>Filter application statuses</div>
-            </Link>
-          </div>
+        <div style={styles.tableCard}>
+          {loading ? (
+            <div style={styles.empty}>Loading applications...</div>
+          ) : filteredApplications.length === 0 ? (
+            <div style={styles.empty}>
+              {applications.length === 0
+                ? "No applications found."
+                : "No applications match this status."}
+            </div>
+          ) : (
+            <div style={styles.tableWrap}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Job Title</th>
+                    <th style={styles.th}>Company</th>
+                    <th style={styles.th}>Status</th>
+                    <th style={styles.th}>Submitted</th>
+                    <th style={styles.th}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredApplications.map((app) => (
+                    <tr key={app.application_id}>
+                      <td style={{ ...styles.td, fontWeight: 700, color: "#1d2226" }}>
+                        {app.job_title || "Untitled Job"}
+                      </td>
+                      <td style={styles.td}>{app.company_name || "Company"}</td>
+                      <td style={styles.td}>
+                        <StatusBadge status={app.status} />
+                      </td>
+                      <td style={styles.td}>
+                        {app.submitted_at
+                          ? new Date(app.submitted_at).toLocaleString()
+                          : "N/A"}
+                      </td>
+                      <td style={styles.td}>
+                        <Link
+                          to={`/member/applications/details/${app.application_id}`}
+                          style={styles.link}
+                        >
+                          View Details
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

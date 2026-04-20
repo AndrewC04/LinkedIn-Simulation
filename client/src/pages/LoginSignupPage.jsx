@@ -23,8 +23,6 @@ export default function LoginSignupPage() {
     lastName: "",
     email: "",
     password: "",
-    recruiterId: "",
-    companyId: "",
     companyName: "",
   });
 
@@ -136,6 +134,7 @@ export default function LoginSignupPage() {
       border: "none",
       cursor: "pointer",
       marginTop: "4px",
+      opacity: loading ? 0.8 : 1,
     },
     error: {
       backgroundColor: "#fff1f2",
@@ -160,14 +159,12 @@ export default function LoginSignupPage() {
       setLoading(true);
 
       await login({
-        email: loginState.email,
+        email: loginState.email.trim(),
         password: loginState.password,
         role: loginState.role,
       });
 
-      navigate(
-        loginState.role === "recruiter" ? "/recruiter/home" : "/member/home"
-      );
+      navigate(loginState.role === "recruiter" ? "/recruiter/home" : "/member/home");
     } catch (err) {
       setError(err.message || "Login failed.");
     } finally {
@@ -188,15 +185,9 @@ export default function LoginSignupPage() {
       return;
     }
 
-    if (signupState.role === "recruiter") {
-      if (
-        !signupState.recruiterId.trim() ||
-        !signupState.companyId.trim() ||
-        !signupState.companyName.trim()
-      ) {
-        setError("Recruiter ID, Company ID, and Company Name are required for recruiter signup.");
-        return;
-      }
+    if (signupState.role === "recruiter" && !signupState.companyName.trim()) {
+      setError("Company name is required for recruiter signup.");
+      return;
     }
 
     try {
@@ -204,18 +195,15 @@ export default function LoginSignupPage() {
 
       await signup({
         role: signupState.role,
-        email: signupState.email,
+        email: signupState.email.trim(),
         password: signupState.password,
-        firstName: signupState.firstName,
-        lastName: signupState.lastName,
-        recruiterId: signupState.recruiterId,
-        companyId: signupState.companyId,
-        companyName: signupState.companyName,
+        firstName: signupState.firstName.trim(),
+        lastName: signupState.lastName.trim(),
+        companyName:
+          signupState.role === "recruiter" ? signupState.companyName.trim() : "",
       });
 
-      navigate(
-        signupState.role === "recruiter" ? "/recruiter/home" : "/member/home"
-      );
+      navigate(signupState.role === "recruiter" ? "/recruiter/home" : "/member/home");
     } catch (err) {
       setError(err.message || "Signup failed.");
     } finally {
@@ -245,6 +233,7 @@ export default function LoginSignupPage() {
             >
               Login
             </button>
+
             <button
               type="button"
               style={styles.tab(tab === "signup")}
@@ -266,14 +255,17 @@ export default function LoginSignupPage() {
                 <button
                   type="button"
                   style={styles.roleBtn(loginState.role === "member")}
-                  onClick={() => setLoginState({ ...loginState, role: "member" })}
+                  onClick={() => setLoginState((prev) => ({ ...prev, role: "member" }))}
                 >
                   Member
                 </button>
+
                 <button
                   type="button"
                   style={styles.roleBtn(loginState.role === "recruiter")}
-                  onClick={() => setLoginState({ ...loginState, role: "recruiter" })}
+                  onClick={() =>
+                    setLoginState((prev) => ({ ...prev, role: "recruiter" }))
+                  }
                 >
                   Recruiter
                 </button>
@@ -281,9 +273,12 @@ export default function LoginSignupPage() {
 
               <div style={styles.label}>Email</div>
               <input
+                type="email"
                 style={styles.input}
                 value={loginState.email}
-                onChange={(e) => setLoginState({ ...loginState, email: e.target.value })}
+                onChange={(e) =>
+                  setLoginState((prev) => ({ ...prev, email: e.target.value }))
+                }
                 placeholder="name@example.com"
               />
 
@@ -292,11 +287,18 @@ export default function LoginSignupPage() {
                 type="password"
                 style={styles.input}
                 value={loginState.password}
-                onChange={(e) => setLoginState({ ...loginState, password: e.target.value })}
+                onChange={(e) =>
+                  setLoginState((prev) => ({ ...prev, password: e.target.value }))
+                }
                 placeholder="Enter password"
               />
 
-              <button type="button" style={styles.button} onClick={handleLogin} disabled={loading}>
+              <button
+                type="button"
+                style={styles.button}
+                onClick={handleLogin}
+                disabled={loading}
+              >
                 {loading ? "Signing In..." : "Sign In"}
               </button>
             </>
@@ -307,14 +309,23 @@ export default function LoginSignupPage() {
                 <button
                   type="button"
                   style={styles.roleBtn(signupState.role === "member")}
-                  onClick={() => setSignupState({ ...signupState, role: "member" })}
+                  onClick={() => {
+                    setSignupState((prev) => ({
+                      ...prev,
+                      role: "member",
+                      companyName: "",
+                    }));
+                  }}
                 >
                   Member
                 </button>
+
                 <button
                   type="button"
                   style={styles.roleBtn(signupState.role === "recruiter")}
-                  onClick={() => setSignupState({ ...signupState, role: "recruiter" })}
+                  onClick={() =>
+                    setSignupState((prev) => ({ ...prev, role: "recruiter" }))
+                  }
                 >
                   Recruiter
                 </button>
@@ -324,7 +335,9 @@ export default function LoginSignupPage() {
               <input
                 style={styles.input}
                 value={signupState.firstName}
-                onChange={(e) => setSignupState({ ...signupState, firstName: e.target.value })}
+                onChange={(e) =>
+                  setSignupState((prev) => ({ ...prev, firstName: e.target.value }))
+                }
                 placeholder="First name"
               />
 
@@ -332,15 +345,20 @@ export default function LoginSignupPage() {
               <input
                 style={styles.input}
                 value={signupState.lastName}
-                onChange={(e) => setSignupState({ ...signupState, lastName: e.target.value })}
+                onChange={(e) =>
+                  setSignupState((prev) => ({ ...prev, lastName: e.target.value }))
+                }
                 placeholder="Last name"
               />
 
               <div style={styles.label}>Email</div>
               <input
+                type="email"
                 style={styles.input}
                 value={signupState.email}
-                onChange={(e) => setSignupState({ ...signupState, email: e.target.value })}
+                onChange={(e) =>
+                  setSignupState((prev) => ({ ...prev, email: e.target.value }))
+                }
                 placeholder="name@example.com"
               />
 
@@ -349,39 +367,35 @@ export default function LoginSignupPage() {
                 type="password"
                 style={styles.input}
                 value={signupState.password}
-                onChange={(e) => setSignupState({ ...signupState, password: e.target.value })}
+                onChange={(e) =>
+                  setSignupState((prev) => ({ ...prev, password: e.target.value }))
+                }
                 placeholder="Create password"
               />
 
               {signupState.role === "recruiter" ? (
                 <>
-                  <div style={styles.label}>Recruiter ID</div>
-                  <input
-                    style={styles.input}
-                    value={signupState.recruiterId}
-                    onChange={(e) => setSignupState({ ...signupState, recruiterId: e.target.value })}
-                    placeholder="rec_100"
-                  />
-
-                  <div style={styles.label}>Company ID</div>
-                  <input
-                    style={styles.input}
-                    value={signupState.companyId}
-                    onChange={(e) => setSignupState({ ...signupState, companyId: e.target.value })}
-                    placeholder="comp_100"
-                  />
-
                   <div style={styles.label}>Company Name</div>
                   <input
                     style={styles.input}
                     value={signupState.companyName}
-                    onChange={(e) => setSignupState({ ...signupState, companyName: e.target.value })}
+                    onChange={(e) =>
+                      setSignupState((prev) => ({
+                        ...prev,
+                        companyName: e.target.value,
+                      }))
+                    }
                     placeholder="TechCorp"
                   />
                 </>
               ) : null}
 
-              <button type="button" style={styles.button} onClick={handleSignup} disabled={loading}>
+              <button
+                type="button"
+                style={styles.button}
+                onClick={handleSignup}
+                disabled={loading}
+              >
                 {loading ? "Creating Account..." : "Create Account"}
               </button>
             </>

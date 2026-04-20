@@ -1,8 +1,9 @@
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+import uuid
 
-from app.security import hash_password, verify_password
+from app.security import hash_password, verify_password, create_access_token
 
 
 def create_member_account(
@@ -24,8 +25,7 @@ def create_member_account(
             detail="Member email already exists",
         )
 
-    import uuid
-    member_id = str(uuid.uuid4())
+    member_id = f"mem_{uuid.uuid4().hex[:8]}"
     password_hash = hash_password(password)
 
     db.execute(
@@ -49,20 +49,24 @@ def create_member_account(
     )
     db.commit()
 
+    access_token = create_access_token(
+        {"sub": member_id, "role": "member", "email": email}
+    )
+
     return {
         "user_id": member_id,
         "email": email,
         "role": "member",
         "first_name": first_name,
         "last_name": last_name,
+        "access_token": access_token,
+        "token_type": "bearer",
     }
 
 
 def create_recruiter_account(
     db: Session,
     *,
-    recruiter_id: str,
-    company_id: str,
     first_name: str,
     last_name: str,
     email: str,
@@ -80,6 +84,8 @@ def create_recruiter_account(
             detail="Recruiter email already exists",
         )
 
+    recruiter_id = f"rec_{uuid.uuid4().hex[:8]}"
+    company_id = f"comp_{uuid.uuid4().hex[:8]}"
     password_hash = hash_password(password)
 
     db.execute(
@@ -105,12 +111,18 @@ def create_recruiter_account(
     )
     db.commit()
 
+    access_token = create_access_token(
+        {"sub": recruiter_id, "role": "recruiter", "email": email}
+    )
+
     return {
         "user_id": recruiter_id,
         "email": email,
         "role": "recruiter",
         "first_name": first_name,
         "last_name": last_name,
+        "access_token": access_token,
+        "token_type": "bearer",
     }
 
 
@@ -129,11 +141,12 @@ def login_user(db: Session, *, email: str, password: str, role: str) -> dict:
             {"email": email},
         ).fetchone()
 
-        if row is None:
+        if row is None or not row[4] or not verify_password(password, row[4]):
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
-        if not row[4] or not verify_password(password, row[4]):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+        access_token = create_access_token(
+            {"sub": row[0], "role": "member", "email": row[3]}
+        )
 
         return {
             "user_id": row[0],
@@ -141,6 +154,8 @@ def login_user(db: Session, *, email: str, password: str, role: str) -> dict:
             "last_name": row[2],
             "email": row[3],
             "role": "member",
+            "access_token": access_token,
+            "token_type": "bearer",
         }
 
     if role == "recruiter":
@@ -155,11 +170,12 @@ def login_user(db: Session, *, email: str, password: str, role: str) -> dict:
             {"email": email},
         ).fetchone()
 
-        if row is None:
+        if row is None or not row[4] or not verify_password(password, row[4]):
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
-        if not row[4] or not verify_password(password, row[4]):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+        access_token = create_access_token(
+            {"sub": row[0], "role": "recruiter", "email": row[3]}
+        )
 
         return {
             "user_id": row[0],
@@ -167,6 +183,8 @@ def login_user(db: Session, *, email: str, password: str, role: str) -> dict:
             "last_name": row[2],
             "email": row[3],
             "role": "recruiter",
+            "access_token": access_token,
+            "token_type": "bearer",
         }
 
     raise HTTPException(status_code=400, detail="Role must be member or recruiter")

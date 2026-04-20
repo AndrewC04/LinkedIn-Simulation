@@ -1,8 +1,17 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import LinkedInNav from "../components/LinkedInNav.jsx";
+import { useAuth } from "../auth/AuthContext.jsx";
+import { recruiterJobs } from "../api/applicationApi";
 
-export default function RecruiterAppHome() {
+export default function SelectJob() {
+  const { user } = useAuth();
+  const recruiterId = user?.userId;
+
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   const styles = {
     page: {
       minHeight: "100vh",
@@ -14,152 +23,182 @@ export default function RecruiterAppHome() {
       margin: "0 auto",
       padding: "24px 16px 40px",
     },
-    heroCard: {
-      backgroundColor: "#ffffff",
+    headerCard: {
+      backgroundColor: "#fff",
       border: "1px solid #d9dee3",
       borderRadius: "16px",
-      padding: "28px",
-      boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+      padding: "26px 28px",
+      boxShadow: "0 1px 2px rgba(0,0,0,0.07)",
       marginBottom: "22px",
     },
-    heroTitle: {
+    title: {
       margin: 0,
-      fontSize: "32px",
+      fontSize: "30px",
       fontWeight: 700,
       color: "#1d2226",
-      letterSpacing: "-0.02em",
     },
-    heroText: {
-      marginTop: "10px",
-      fontSize: "15px",
+    subtitle: {
+      marginTop: "8px",
+      fontSize: "14px",
       color: "#5e6a75",
       lineHeight: 1.6,
-      maxWidth: "760px",
     },
-    sectionTitle: {
-      fontSize: "20px",
-      fontWeight: 700,
-      color: "#1d2226",
-      margin: "0 0 14px 2px",
-    },
-    cardGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-      gap: "20px",
-    },
-    actionCard: {
-      backgroundColor: "#ffffff",
+    card: {
+      backgroundColor: "#fff",
       border: "1px solid #d9dee3",
       borderRadius: "16px",
-      padding: "24px",
       boxShadow: "0 1px 2px rgba(0,0,0,0.07)",
-      textDecoration: "none",
-      color: "inherit",
-      transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
-      display: "block",
+      padding: "18px",
     },
-    actionTop: {
-      display: "flex",
-      alignItems: "center",
-      gap: "12px",
+    jobCard: {
+      border: "1px solid #e5e7eb",
+      borderRadius: "14px",
+      padding: "18px",
       marginBottom: "14px",
+      backgroundColor: "#fff",
     },
-    actionIcon: {
-      width: "46px",
-      height: "46px",
-      borderRadius: "12px",
-      backgroundColor: "#e8f3ff",
-      color: "#0a66c2",
+    topRow: {
       display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontWeight: 700,
-      fontSize: "18px",
-      flexShrink: 0,
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: "16px",
+      flexWrap: "wrap",
     },
-    actionTitle: {
+    titleText: {
       margin: 0,
-      fontSize: "20px",
+      fontSize: "18px",
       fontWeight: 700,
       color: "#1d2226",
     },
-    actionText: {
-      margin: 0,
+    meta: {
+      marginTop: "6px",
+      fontSize: "14px",
       color: "#5e6a75",
-      fontSize: "14px",
-      lineHeight: 1.6,
     },
-    actionFooter: {
-      marginTop: "18px",
-      color: "#0a66c2",
-      fontSize: "14px",
+    pill: {
+      display: "inline-flex",
+      padding: "6px 12px",
+      borderRadius: "999px",
+      fontSize: "12px",
       fontWeight: 700,
+      textTransform: "capitalize",
+      backgroundColor: "#e8f3ff",
+      color: "#0a66c2",
+      border: "1px solid #cfe5ff",
+    },
+    actions: {
+      marginTop: "14px",
+    },
+    link: {
+      color: "#0a66c2",
+      fontWeight: 700,
+      textDecoration: "none",
+      fontSize: "14px",
+    },
+    empty: {
+      padding: "12px 2px",
+      color: "#6b7280",
+      fontSize: "14px",
+    },
+    error: {
+      backgroundColor: "#fff1f2",
+      color: "#be123c",
+      border: "1px solid #fecdd3",
+      padding: "12px 14px",
+      borderRadius: "10px",
+      fontSize: "14px",
     },
   };
 
-  const hoverIn = (e) => {
-    e.currentTarget.style.transform = "translateY(-2px)";
-    e.currentTarget.style.boxShadow = "0 10px 22px rgba(0,0,0,0.10)";
-    e.currentTarget.style.borderColor = "#b9d6f2";
-  };
+  useEffect(() => {
+    async function loadJobs() {
+      if (!recruiterId) {
+        setLoading(false);
+        setError("No recruiter ID found in session.");
+        return;
+      }
 
-  const hoverOut = (e) => {
-    e.currentTarget.style.transform = "translateY(0)";
-    e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.07)";
-    e.currentTarget.style.borderColor = "#d9dee3";
-  };
+      try {
+        setError("");
+
+        const data = await recruiterJobs(recruiterId, null, 1, 20);
+        console.log("select job user:", user);
+        console.log("select job recruiterId:", recruiterId);
+        console.log("select job API response:", data);
+
+        // Support multiple possible response shapes safely
+        const jobList =
+          data?.jobs ||
+          data?.items ||
+          data?.results ||
+          (Array.isArray(data) ? data : []);
+
+        setJobs(Array.isArray(jobList) ? jobList : []);
+      } catch (err) {
+        console.error("Failed to load recruiter jobs:", err);
+        setError(err.message || "Failed to load recruiter jobs.");
+        setJobs([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadJobs();
+  }, [recruiterId, user]);
 
   return (
     <div style={styles.page}>
       <LinkedInNav userType="recruiter" />
 
       <div style={styles.container}>
-        <div style={styles.heroCard}>
-          <h1 style={styles.heroTitle}>Applicants</h1>
-          <p style={styles.heroText}>
-            Select a job, review incoming applications, open candidate details,
-            and move applicants through your hiring pipeline.
+        <div style={styles.headerCard}>
+          <h1 style={styles.title}>Select Job</h1>
+          <p style={styles.subtitle}>
+            Choose one of your jobs to view its applicants.
           </p>
         </div>
 
-        <div>
-          <div style={styles.sectionTitle}>Recruiter tools</div>
+        <div style={styles.card}>
+          {loading ? (
+            <div style={styles.empty}>Loading jobs...</div>
+          ) : error ? (
+            <div style={styles.error}>{error}</div>
+          ) : jobs.length === 0 ? (
+            <div style={styles.empty}>No jobs found.</div>
+          ) : (
+            jobs.map((job, index) => {
+              const jobId = job?.job_id || job?.id || `job-${index}`;
+              const title = job?.title || job?.job_title || "Untitled Job";
+              const company =
+                job?.company_name || job?.company || job?.company_id || "Company";
+              const status = job?.status || "open";
+              const location = job?.location || "Location not specified";
 
-          <div style={styles.cardGrid}>
-            <Link
-              to="/recruiter/applications/select-job"
-              style={styles.actionCard}
-              onMouseEnter={hoverIn}
-              onMouseLeave={hoverOut}
-            >
-              <div style={styles.actionTop}>
-                <div style={styles.actionIcon}>SJ</div>
-                <h2 style={styles.actionTitle}>Select Job</h2>
-              </div>
-              <p style={styles.actionText}>
-                Choose one of your postings and review all applications tied to
-                that position.
-              </p>
-              <div style={styles.actionFooter}>Choose a job posting</div>
-            </Link>
+              return (
+                <div key={jobId} style={styles.jobCard}>
+                  <div style={styles.topRow}>
+                    <div>
+                      <h2 style={styles.titleText}>{title}</h2>
+                      <div style={styles.meta}>
+                        {company} • {location}
+                      </div>
+                    </div>
 
-            <Link
-              to="/recruiter/applications/select-job"
-              style={styles.actionCard}
-              onMouseEnter={hoverIn}
-              onMouseLeave={hoverOut}
-            >
-              <div style={styles.actionTop}>
-                <div style={styles.actionIcon}>VA</div>
-                <h2 style={styles.actionTitle}>View Applicants</h2>
-              </div>
-              <p style={styles.actionText}>
-                Open the applicant workflow for a role and move quickly into
-                detailed review.
-              </p>
-              <div style={styles.actionFooter}>Open applicant workflow</div>
-            </Link>
-          </div>
+                    <span style={styles.pill}>{status}</span>
+                  </div>
+
+                  <div style={styles.actions}>
+                    <Link
+                      to={`/recruiter/applications/view-applicants/${jobId}`}
+                      style={styles.link}
+                    >
+                      View Applicants
+                    </Link>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

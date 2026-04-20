@@ -1,32 +1,51 @@
 from dataclasses import dataclass
 
-from fastapi import Header, HTTPException, status
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError
+
+from app.security import decode_access_token
+
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 @dataclass
 class CurrentUser:
     user_id: str
+    email: str
     role: str
 
 
 def get_current_user(
-    x_user_id: str | None = Header(default=None),
-    x_user_role: str | None = Header(default=None),
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> CurrentUser:
-    if not x_user_id or not x_user_role:
+    if credentials is None or credentials.scheme.lower() != "bearer":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing authentication headers",
         )
 
-    role = x_user_role.strip().lower()
-    if role not in {"member", "recruiter"}:
+    token = credentials.credentials
+
+    try:
+        payload = decode_access_token(token)
+    except JWTError:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid user role",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
         )
 
-    return CurrentUser(user_id=x_user_id, role=role)
+    user_id = payload.get("sub")
+    email = payload.get("email")
+    role = payload.get("role")
+
+    if not user_id or not email or not role:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+
+    return CurrentUser(user_id=user_id, email=email, role=role)
 
 
 def require_member(user: CurrentUser) -> None:

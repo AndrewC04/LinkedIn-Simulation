@@ -29,8 +29,6 @@ def signup_member(payload: MemberSignupRequest, db: Session = Depends(get_db)):
 def signup_recruiter(payload: RecruiterSignupRequest, db: Session = Depends(get_db)):
     user = create_recruiter_account(
         db,
-        recruiter_id=payload.recruiter_id,
-        company_id=payload.company_id,
         first_name=payload.first_name,
         last_name=payload.last_name,
         email=payload.email,

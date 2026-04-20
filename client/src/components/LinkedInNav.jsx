@@ -7,8 +7,10 @@ export default function LinkedInNav({ userType }) {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
+  const resolvedUserType = userType || user?.role || "member";
+
   const items =
-    userType === "member"
+    resolvedUserType === "member"
       ? [
           ["/member/home", "Home"],
           ["/member/jobs", "Jobs"],
@@ -127,7 +129,9 @@ export default function LinkedInNav({ userType }) {
             </NavLink>
           ))}
 
-          <div style={styles.userPill}>{user?.displayName || user?.email}</div>
+          <div style={styles.userPill}>
+            {user?.displayName || user?.email || "User"}
+          </div>
 
           <button style={styles.logoutButton} onClick={handleLogout}>
             Logout
