@@ -100,33 +100,33 @@ export default function MemberHome({ onNavigate }) {
           <div style={styles.card}>
             <div style={styles.titleRow}>
               <div>
-                <div style={styles.title}>Member Home</div>
+                <div style={styles.title}>Member Dashboard</div>
                 <div style={styles.subtitle}>
-                  Focused on the required workflows: search jobs, view job details, apply, and track your applications.
+                  Organized around job seeker workflows: browse jobs, apply, track applications, and review feedback.
                 </div>
               </div>
-              <div style={styles.badge}>Member Dashboard</div>
+              <div style={styles.badge}>Job Seeker Hub</div>
             </div>
 
             <div style={styles.grid}>
-              <FeatureCard title="Search Jobs" description="Browse open positions and filter by keyword, location, employment type, and work mode." badge="Required" />
-              <FeatureCard title="View Job Details" description="Open a job page, inspect requirements, and decide whether to apply." badge="Required" />
-              <FeatureCard title="Apply to Jobs" description="Submit resume and cover letter through the Application Service workflow." badge="Required" />
-              <FeatureCard title="My Applications" description="Track submitted, reviewing, interview, offer, and rejected statuses in one place." badge="Required" />
+              <FeatureCard title="Browse Jobs" description="Explore available job postings matched to your skills and interests." badge="Required" />
+              <FeatureCard title="Submit Applications" description="Apply for jobs with your resume and cover letter." badge="Required" />
+              <FeatureCard title="Track Applications" description="View your application history, status updates, and interview progress." badge="Required" />
+              <FeatureCard title="Saved Jobs" description="Save interesting jobs and return to them when you are ready to apply." badge="Core" />
             </div>
           </div>
 
           <div style={styles.card}>
             <div style={{ fontWeight: 800, fontSize: "20px", marginBottom: "10px" }}>Quick actions</div>
             <div style={{ color: brand.muted, fontSize: "14px", marginBottom: "16px" }}>
-              Frontend-only buttons for the member-side project flows.
+              Get started with your job search and application tracking.
             </div>
 
             <div style={styles.actions}>
-              <button style={styles.primaryBtn} onClick={() => onNavigate("jobSearch")}>Search Jobs</button>
-              <button style={styles.secondaryBtn} onClick={() => onNavigate("submitApplication")}>Apply to a Job</button>
-              <button style={styles.secondaryBtn} onClick={() => onNavigate("myApplications")}>My Applications</button>
-              <button style={styles.secondaryBtn} onClick={() => onNavigate("messages")}>Messages</button>
+              <button style={styles.primaryBtn} onClick={() => onNavigate("jobListings")}>Browse Jobs</button>
+              <button style={styles.secondaryBtn} onClick={() => onNavigate("submitApp")}>Submit Application</button>
+              <button style={styles.secondaryBtn} onClick={() => onNavigate("myApplications")}>Track Applications</button>
+              <button style={styles.secondaryBtn} onClick={() => onNavigate("savedJobs")}>Saved Jobs</button>
             </div>
           </div>
         </div>
