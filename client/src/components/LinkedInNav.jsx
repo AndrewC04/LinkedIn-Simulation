@@ -9,9 +9,9 @@ export default function LinkedInNav({ userType, onNavigate }) {
     userType === "member"
       ? [
           ["memberHome", "Home"],
-          ["jobSearch", "Jobs"],
+          ["jobListings", "Browse Jobs"],
           ["myApplications", "My Applications"],
-          ["messages", "Messages"],
+          ["savedJobs", "Saved Jobs"],
         ]
       : [
           ["recruiterHome", "Home"],

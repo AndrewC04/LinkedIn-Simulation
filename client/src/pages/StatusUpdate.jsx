@@ -54,7 +54,7 @@ export default function StatusUpdate({ onNavigate }) {
     if (!applicationId.trim()) return notify("Please enter an application ID.", "error");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8003/applications/updateStatus", {
+      const res = await fetch("http://localhost:8005/applications/updateStatus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ application_id: applicationId.trim(), status: newStatus })

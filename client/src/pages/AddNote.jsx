@@ -45,7 +45,7 @@ export default function AddNote({ onNavigate }) {
     if (!note.trim()) return notify("Note cannot be empty.", "error");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8003/applications/addNote", {
+      const res = await fetch("http://localhost:8005/applications/addNote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -75,7 +75,7 @@ export default function ApplicantsList({ onNavigate }) {
     setSelectedJob(job);
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8003/applications/byJob", {
+      const res = await fetch("http://localhost:8005/applications/byJob", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ job_id: job.job_id })
       });
