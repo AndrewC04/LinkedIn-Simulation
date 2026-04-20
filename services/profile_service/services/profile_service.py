@@ -252,8 +252,8 @@ class ProfileService:
             search_results.append(
                 MemberSearchResult(
                     member_id=row[0],
-                    full_name=f"{row[1]} {row[2]}",
-                    headline=row[3],
+                    full_name=f"{row[1] or ''} {row[2] or ''}".strip(),
+                    headline=row[3] or "",
                     location=location,
                     skills=json.loads(row[6]) if row[6] else None,
                     match_score=0.95  # Placeholder for relevance scoring

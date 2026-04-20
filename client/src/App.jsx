@@ -18,6 +18,8 @@ const OpenApplication = lazy(() => import("./pages/OpenApplication.jsx"));
 const JobSearch = lazy(() => import("./pages/JobSearch.jsx"));
 const JobDetails = lazy(() => import("./pages/JobDetails.jsx"));
 const SavedJobs = lazy(() => import("./pages/SavedJobs.jsx"));
+const MemberProfile = lazy(() => import("./pages/MemberProfile.jsx"));
+const MemberMessages = lazy(() => import("./pages/MemberMessages.jsx"));
 const RecruiterJobsDashboard = lazy(() => import("./pages/RecruiterJobsDashboard.jsx"));
 const CreateJob = lazy(() => import("./pages/CreateJob.jsx"));
 const EditJob = lazy(() => import("./pages/EditJob.jsx"));
@@ -195,6 +197,33 @@ export default function App() {
           element={
             <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
               <JobDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/member/profile"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <MemberProfile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/member/profile/:memberId"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <MemberProfile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/member/messages"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <MemberMessages />
             </ProtectedRoute>
           }
         />

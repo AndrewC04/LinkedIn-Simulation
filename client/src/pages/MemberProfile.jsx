@@ -224,47 +224,65 @@ export default function MemberProfile() {
   /* fetch all data */
   useEffect(() => {
     if (!viewingId) return;
+    let cancelled = false;
 
-    setLoading(true);
-    setError(null);
+    async function loadProfileData() {
+      setLoading(true);
+      setError(null);
 
-    Promise.allSettled([
-      getMemberProfile(viewingId),
-      getExperience(viewingId),
-      getEducation(viewingId),
-      isOwnProfile ? applicationsByMember(viewingId, 1, 200) : Promise.resolve(null),
-      searchMembers({}, 1, 8),
-    ]).then(([profileRes, expRes, eduRes, appsRes, searchRes]) => {
-      if (profileRes.status === "fulfilled") {
-        const p = profileRes.value;
+      try {
+        const p = await getMemberProfile(viewingId);
+        if (cancelled) return;
+
         setProfile(p);
         setDraft({
           headline: p.headline || "",
           location: p.location || "",
-          summary:  p.summary  || "",
-          skills:   (p.skills  || []).join(", "),
+          summary: p.summary || "",
+          skills: (p.skills || []).join(", "),
         });
-      } else {
-        setError("Profile not found or profile service is offline (port 8001).");
+
+        const [expRes, eduRes, appsRes, searchRes] = await Promise.allSettled([
+          getExperience(viewingId),
+          getEducation(viewingId),
+          isOwnProfile ? applicationsByMember(viewingId, 1, 200) : Promise.resolve(null),
+          searchMembers({}, 1, 8),
+        ]);
+
+        if (cancelled) return;
+
+        if (expRes.status === "fulfilled") setExperience(expRes.value.experience || []);
+        if (eduRes.status === "fulfilled") setEducation(eduRes.value.education || []);
+
+        if (appsRes.status === "fulfilled" && appsRes.value) {
+          const apps = appsRes.value.applications || [];
+          const counts = {};
+          apps.forEach((a) => {
+            counts[a.status] = (counts[a.status] || 0) + 1;
+          });
+          setAppCounts(counts);
+        }
+
+        if (searchRes.status === "fulfilled") {
+          const all = searchRes.value.results || [];
+          setRecommended(all.filter((m) => m.member_id !== viewingId).slice(0, 5));
+        }
+      } catch {
+        if (!cancelled) {
+          setError("Profile not found or profile service is offline (port 8001).");
+          setProfile(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
+    }
 
-      if (expRes.status === "fulfilled") setExperience(expRes.value.experience || []);
-      if (eduRes.status === "fulfilled") setEducation(eduRes.value.education || []);
-
-      if (appsRes.status === "fulfilled" && appsRes.value) {
-        const apps = appsRes.value.applications || [];
-        const counts = {};
-        apps.forEach((a) => { counts[a.status] = (counts[a.status] || 0) + 1; });
-        setAppCounts(counts);
-      }
-
-      if (searchRes.status === "fulfilled") {
-        const all = searchRes.value.results || [];
-        setRecommended(all.filter((m) => m.member_id !== viewingId).slice(0, 5));
-      }
-
-      setLoading(false);
-    });
+    loadProfileData();
+    return () => {
+      cancelled = true;
+    };
   }, [viewingId, isOwnProfile]);
 
   async function handleAddExperience() {
