@@ -13,6 +13,7 @@ export default function LinkedInNav({ userType }) {
     resolvedUserType === "member"
       ? [
           ["/member/home", "Home"],
+          ["/member/profile", "Profile"],
           ["/member/jobs", "Jobs"],
           ["/member/applications", "My Applications"],
           ["/member/messages", "Messages"],

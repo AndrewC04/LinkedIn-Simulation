@@ -14,7 +14,7 @@ from shared.mysql_client import get_db
 from shared.redis_cache import cache_get, cache_set, cache_delete, member_key
 from services.profile_service.models.profile import (
     MemberCreateResponse, MemberGetResponse, MemberUpdateResponse,
-    MemberSearchResult
+    MemberSearchResult, ExperienceItem, EducationItem
 )
 
 
@@ -261,3 +261,126 @@ class ProfileService:
             )
 
         return search_results, total
+
+    # ── Experience ──────────────────────────────────────────────────
+
+    @staticmethod
+    def get_experience(member_id: str) -> List[ExperienceItem]:
+        with get_db() as db:
+            rows = db.execute(
+                text("""
+                    SELECT experience_id, member_id, title, company_name,
+                           location, start_date, end_date, description
+                    FROM member_experience
+                    WHERE member_id = :id
+                    ORDER BY start_date DESC
+                """),
+                {"id": member_id}
+            ).fetchall()
+        return [
+            ExperienceItem(
+                experience_id=str(r[0]),
+                member_id=r[1],
+                title=r[2],
+                company_name=r[3],
+                location=r[4],
+                start_date=str(r[5]) if r[5] else None,
+                end_date=str(r[6]) if r[6] else None,
+                description=r[7],
+            )
+            for r in rows
+        ]
+
+    @staticmethod
+    def add_experience(member_id: str, data: dict) -> ExperienceItem:
+        exp_id = str(uuid.uuid4())
+        with get_db() as db:
+            db.execute(
+                text("""
+                    INSERT INTO member_experience
+                    (experience_id, member_id, title, company_name, location, start_date, end_date, description)
+                    VALUES (:experience_id, :member_id, :title, :company_name, :location, :start_date, :end_date, :description)
+                """),
+                {
+                    "experience_id": exp_id,
+                    "member_id": member_id,
+                    "title": data["title"],
+                    "company_name": data["company_name"],
+                    "location": data.get("location"),
+                    "start_date": data.get("start_date"),
+                    "end_date": data.get("end_date"),
+                    "description": data.get("description"),
+                }
+            )
+            db.commit()
+        return ExperienceItem(experience_id=exp_id, member_id=member_id, **data)
+
+    @staticmethod
+    def delete_experience(experience_id: str) -> bool:
+        with get_db() as db:
+            result = db.execute(
+                text("DELETE FROM member_experience WHERE experience_id = :id"),
+                {"id": experience_id}
+            )
+            db.commit()
+        return result.rowcount > 0
+
+    # ── Education ───────────────────────────────────────────────────
+
+    @staticmethod
+    def get_education(member_id: str) -> List[EducationItem]:
+        with get_db() as db:
+            rows = db.execute(
+                text("""
+                    SELECT education_id, member_id, school_name, degree, field_of_study, start_year, end_year
+                    FROM member_education
+                    WHERE member_id = :id
+                    ORDER BY end_year DESC
+                """),
+                {"id": member_id}
+            ).fetchall()
+        return [
+            EducationItem(
+                education_id=str(r[0]),
+                member_id=r[1],
+                school_name=r[2],
+                degree=r[3],
+                field_of_study=r[4],
+                start_year=r[5],
+                end_year=r[6],
+            )
+            for r in rows
+        ]
+
+    @staticmethod
+    def add_education(member_id: str, data: dict) -> EducationItem:
+        edu_id = str(uuid.uuid4())
+        with get_db() as db:
+            db.execute(
+                text("""
+                    INSERT INTO member_education
+                    (education_id, member_id, school_name, degree, field_of_study, start_year, end_year)
+                    VALUES (:education_id, :member_id, :school_name, :degree, :field_of_study, :start_year, :end_year)
+                """),
+                {
+                    "education_id": edu_id,
+                    "member_id": member_id,
+                    "school_name": data["school_name"],
+                    "degree": data.get("degree"),
+                    "field_of_study": data.get("field_of_study"),
+                    "start_year": data.get("start_year"),
+                    "end_year": data.get("end_year"),
+                }
+            )
+            db.commit()
+        return EducationItem(education_id=edu_id, member_id=member_id, **data)
+
+    @staticmethod
+    def delete_education(education_id: str) -> bool:
+        with get_db() as db:
+            result = db.execute(
+                text("DELETE FROM member_education WHERE education_id = :id"),
+                {"id": education_id}
+            )
+            db.commit()
+        return result.rowcount > 0

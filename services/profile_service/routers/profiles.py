@@ -15,6 +15,8 @@ from services.profile_service.models.profile import (
     MemberUpdateRequest, MemberUpdateResponse,
     MemberDeleteRequest, MemberDeleteResponse,
     MemberSearchRequest, MemberSearchResponse,
+    ExperienceGetRequest, ExperienceAddRequest, ExperienceDeleteRequest, ExperienceListResponse,
+    EducationGetRequest, EducationAddRequest, EducationDeleteRequest, EducationListResponse,
     ErrorResponse
 )
 from services.profile_service.services.profile_service import ProfileService
@@ -163,3 +165,49 @@ async def search_members(request: MemberSearchRequest):
         page_size=request.pagination.page_size if request.pagination else 20,
         results=results
     )
+
+
+# ── Experience endpoints ─────────────────────────────────────────────
+
+@router.post("/members/experience/get", response_model=ExperienceListResponse)
+async def get_experience(request: ExperienceGetRequest):
+    items = ProfileService.get_experience(request.member_id)
+    return ExperienceListResponse(member_id=request.member_id, experience=items)
+
+
+@router.post("/members/experience/add", response_model=ExperienceListResponse)
+async def add_experience(request: ExperienceAddRequest):
+    ProfileService.add_experience(request.member_id, request.dict(exclude={"member_id"}))
+    items = ProfileService.get_experience(request.member_id)
+    return ExperienceListResponse(member_id=request.member_id, experience=items)
+
+
+@router.post("/members/experience/delete")
+async def delete_experience(request: ExperienceDeleteRequest):
+    deleted = ProfileService.delete_experience(request.experience_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Experience entry not found")
+    return {"deleted": True, "experience_id": request.experience_id}
+
+
+# ── Education endpoints ──────────────────────────────────────────────
+
+@router.post("/members/education/get", response_model=EducationListResponse)
+async def get_education(request: EducationGetRequest):
+    items = ProfileService.get_education(request.member_id)
+    return EducationListResponse(member_id=request.member_id, education=items)
+
+
+@router.post("/members/education/add", response_model=EducationListResponse)
+async def add_education(request: EducationAddRequest):
+    ProfileService.add_education(request.member_id, request.dict(exclude={"member_id"}))
+    items = ProfileService.get_education(request.member_id)
+    return EducationListResponse(member_id=request.member_id, education=items)
+
+
+@router.post("/members/education/delete")
+async def delete_education(request: EducationDeleteRequest):
+    deleted = ProfileService.delete_education(request.education_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Education entry not found")
+    return {"deleted": True, "education_id": request.education_id}

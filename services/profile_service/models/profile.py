@@ -123,6 +123,76 @@ class MemberSearchResponse(BaseModel):
     results: List[MemberSearchResult]
 
 
+# ==================== EXPERIENCE ====================
+
+class ExperienceItem(BaseModel):
+    experience_id: Optional[str] = None
+    member_id: Optional[str] = None
+    title: str
+    company_name: str
+    location: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    description: Optional[str] = None
+
+
+class ExperienceGetRequest(BaseModel):
+    member_id: str
+
+
+class ExperienceAddRequest(BaseModel):
+    member_id: str
+    title: str
+    company_name: str
+    location: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    description: Optional[str] = None
+
+
+class ExperienceDeleteRequest(BaseModel):
+    experience_id: str
+
+
+class ExperienceListResponse(BaseModel):
+    member_id: str
+    experience: List[ExperienceItem]
+
+
+# ==================== EDUCATION ====================
+
+class EducationItem(BaseModel):
+    education_id: Optional[str] = None
+    member_id: Optional[str] = None
+    school_name: str
+    degree: Optional[str] = None
+    field_of_study: Optional[str] = None
+    start_year: Optional[int] = None
+    end_year: Optional[int] = None
+
+
+class EducationGetRequest(BaseModel):
+    member_id: str
+
+
+class EducationAddRequest(BaseModel):
+    member_id: str
+    school_name: str
+    degree: Optional[str] = None
+    field_of_study: Optional[str] = None
+    start_year: Optional[int] = None
+    end_year: Optional[int] = None
+
+
+class EducationDeleteRequest(BaseModel):
+    education_id: str
+
+
+class EducationListResponse(BaseModel):
+    member_id: str
+    education: List[EducationItem]
+
+
 # ==================== Error Response ====================
 
 class ErrorResponse(BaseModel):

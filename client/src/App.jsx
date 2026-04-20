@@ -5,6 +5,7 @@ import { useAuth } from "./auth/AuthContext.jsx";
 const LoginSignupPage = lazy(() => import("./pages/LoginSignupPage.jsx"));
 
 const MemberHome = lazy(() => import("./pages/MemberHome.jsx"));
+const MemberProfile = lazy(() => import("./pages/MemberProfile.jsx"));
 const MemberAppHome = lazy(() => import("./pages/MemberAppHome.jsx"));
 const ViewMyApplications = lazy(() => import("./pages/ViewMyApplications.jsx"));
 const ViewApplicationDetails = lazy(() => import("./pages/ViewApplicationDetails.jsx"));
@@ -58,6 +59,23 @@ export default function App() {
               user={user}
             >
               <MemberHome />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/member/profile"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <MemberProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/member/profile/:memberId"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <MemberProfile />
             </ProtectedRoute>
           }
         />
