@@ -177,6 +177,7 @@ class RecruiterJobItem(BaseModel):
     posted_datetime: Optional[str] = None
     views_count: int
     applicants_count: int
+    salary_range: Optional[SalaryRange] = None
 
 
 class StandardErrorResponse(BaseModel):

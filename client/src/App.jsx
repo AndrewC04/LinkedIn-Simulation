@@ -5,7 +5,6 @@ import { useAuth } from "./auth/AuthContext.jsx";
 const LoginSignupPage = lazy(() => import("./pages/LoginSignupPage.jsx"));
 
 const MemberHome = lazy(() => import("./pages/MemberHome.jsx"));
-const MemberProfile = lazy(() => import("./pages/MemberProfile.jsx"));
 const MemberAppHome = lazy(() => import("./pages/MemberAppHome.jsx"));
 const ViewMyApplications = lazy(() => import("./pages/ViewMyApplications.jsx"));
 const ViewApplicationDetails = lazy(() => import("./pages/ViewApplicationDetails.jsx"));
@@ -15,6 +14,13 @@ const RecruiterAppHome = lazy(() => import("./pages/RecruiterAppHome.jsx"));
 const SelectJob = lazy(() => import("./pages/SelectJob.jsx"));
 const ViewApplicants = lazy(() => import("./pages/ViewApplicants.jsx"));
 const OpenApplication = lazy(() => import("./pages/OpenApplication.jsx"));
+
+const JobSearch = lazy(() => import("./pages/JobSearch.jsx"));
+const JobDetails = lazy(() => import("./pages/JobDetails.jsx"));
+const SavedJobs = lazy(() => import("./pages/SavedJobs.jsx"));
+const RecruiterJobsDashboard = lazy(() => import("./pages/RecruiterJobsDashboard.jsx"));
+const CreateJob = lazy(() => import("./pages/CreateJob.jsx"));
+const EditJob = lazy(() => import("./pages/EditJob.jsx"));
 
 function PageLoader() {
   return (
@@ -38,7 +44,6 @@ function ProtectedRoute({ allowedRole, isAuthenticated, user, children }) {
   if (!isAuthenticated || user?.role !== allowedRole) {
     return <Navigate to="/" replace />;
   }
-
   return children;
 }
 
@@ -59,23 +64,6 @@ export default function App() {
               user={user}
             >
               <MemberHome />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/member/profile"
-          element={
-            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
-              <MemberProfile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/member/profile/:memberId"
-          element={
-            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
-              <MemberProfile />
             </ProtectedRoute>
           }
         />
@@ -180,6 +168,69 @@ export default function App() {
               user={user}
             >
               <OpenApplication />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/member/jobs"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <JobSearch />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/member/jobs/saved"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <SavedJobs />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/member/jobs/:jobId"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <JobDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/jobs"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <RecruiterJobsDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/jobs/create"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <CreateJob />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/jobs/edit/:jobId"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <EditJob />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/jobs/:jobId"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <JobDetails />
             </ProtectedRoute>
           }
         />

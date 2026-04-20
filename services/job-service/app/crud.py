@@ -83,6 +83,15 @@ def _recruiter_job_item(job: Job) -> dict:
         "posted_datetime": job.posted_datetime.isoformat() if job.posted_datetime else None,
         "views_count": job.views_count,
         "applicants_count": job.applicants_count,
+        "salary_range": (
+            {
+                "min": job.salary_min,
+                "max": job.salary_max,
+                "currency": "USD",
+            }
+            if job.salary_min is not None or job.salary_max is not None
+            else None
+        ),
     }
 
 
