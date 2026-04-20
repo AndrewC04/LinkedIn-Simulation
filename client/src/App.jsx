@@ -1,44 +1,242 @@
-import React, { useState } from "react";
+import React, { Suspense, lazy } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext.jsx";
-import LoginSignupPage from "./pages/LoginSignupPage.jsx";
-import RecruiterHome from "./pages/RecruiterHome.jsx";
-import ManageJobs from "./pages/ManageJobs.jsx";
-import ApplicantsList from "./pages/ApplicantsList.jsx";
-import StatusUpdate from "./pages/StatusUpdate.jsx";
-import AddNote from "./pages/AddNote.jsx";
-import AIReview from "./pages/AIReview.jsx";
-import MemberHome from "./pages/MemberHome.jsx";
-import JobListings from "./pages/JobListings.jsx";
-import MyApplications from "./pages/MyApplications.jsx";
-import SavedJobs from "./pages/SavedJobs.jsx";
-import Submit from "./pages/Submit.jsx";
+
+const LoginSignupPage = lazy(() => import("./pages/LoginSignupPage.jsx"));
+
+const MemberHome = lazy(() => import("./pages/MemberHome.jsx"));
+const MemberAppHome = lazy(() => import("./pages/MemberAppHome.jsx"));
+const ViewMyApplications = lazy(() => import("./pages/ViewMyApplications.jsx"));
+const ViewApplicationDetails = lazy(() => import("./pages/ViewApplicationDetails.jsx"));
+
+const RecruiterHome = lazy(() => import("./pages/RecruiterHome.jsx"));
+const RecruiterAppHome = lazy(() => import("./pages/RecruiterAppHome.jsx"));
+const SelectJob = lazy(() => import("./pages/SelectJob.jsx"));
+const ViewApplicants = lazy(() => import("./pages/ViewApplicants.jsx"));
+const OpenApplication = lazy(() => import("./pages/OpenApplication.jsx"));
+
+const JobSearch = lazy(() => import("./pages/JobSearch.jsx"));
+const JobDetails = lazy(() => import("./pages/JobDetails.jsx"));
+const SavedJobs = lazy(() => import("./pages/SavedJobs.jsx"));
+const RecruiterJobsDashboard = lazy(() => import("./pages/RecruiterJobsDashboard.jsx"));
+const CreateJob = lazy(() => import("./pages/CreateJob.jsx"));
+const EditJob = lazy(() => import("./pages/EditJob.jsx"));
+
+function PageLoader() {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f3f2ef",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "Arial, Helvetica, sans-serif",
+        color: "#1d2226",
+      }}
+    >
+      Loading...
+    </div>
+  );
+}
+
+function ProtectedRoute({ allowedRole, isAuthenticated, user, children }) {
+  if (!isAuthenticated || user?.role !== allowedRole) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
 
 export default function App() {
   const { user, isAuthenticated } = useAuth();
-  const [screen, setScreen] = useState("home");
 
-  if (!isAuthenticated) return <LoginSignupPage />;
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/" element={<LoginSignupPage />} />
 
-  // Recruiter routes
-  if (user?.role === "recruiter") {
-    if (screen === "recruiterHome") return <RecruiterHome onNavigate={setScreen} />;
-    if (screen === "manageJobs")    return <ManageJobs onNavigate={setScreen} />;
-    if (screen === "applicants")    return <ApplicantsList onNavigate={setScreen} />;
-    if (screen === "statusUpdates") return <StatusUpdate onNavigate={setScreen} />;
-    if (screen === "notes")         return <AddNote onNavigate={setScreen} />;
-    if (screen === "analytics")     return <AIReview onNavigate={setScreen} />;
-    return <RecruiterHome onNavigate={setScreen} />;
-  }
+        <Route
+          path="/member/home"
+          element={
+            <ProtectedRoute
+              allowedRole="member"
+              isAuthenticated={isAuthenticated}
+              user={user}
+            >
+              <MemberHome />
+            </ProtectedRoute>
+          }
+        />
 
-  // Member routes
-  if (user?.role === "member") {
-    if (screen === "memberHome")      return <MemberHome onNavigate={setScreen} />;
-    if (screen === "jobListings")     return <JobListings onNavigate={setScreen} />;
-    if (screen === "myApplications")  return <MyApplications onNavigate={setScreen} />;
-    if (screen === "savedJobs")       return <SavedJobs onNavigate={setScreen} />;
-    if (screen === "submitApp")       return <Submit onNavigate={setScreen} />;
-    return <MemberHome onNavigate={setScreen} />;
-  }
+        <Route
+          path="/member/applications"
+          element={
+            <ProtectedRoute
+              allowedRole="member"
+              isAuthenticated={isAuthenticated}
+              user={user}
+            >
+              <MemberAppHome />
+            </ProtectedRoute>
+          }
+        />
 
-  return <LoginSignupPage />;
+        <Route
+          path="/member/applications/view"
+          element={
+            <ProtectedRoute
+              allowedRole="member"
+              isAuthenticated={isAuthenticated}
+              user={user}
+            >
+              <ViewMyApplications />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/member/applications/details/:applicationId"
+          element={
+            <ProtectedRoute
+              allowedRole="member"
+              isAuthenticated={isAuthenticated}
+              user={user}
+            >
+              <ViewApplicationDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/home"
+          element={
+            <ProtectedRoute
+              allowedRole="recruiter"
+              isAuthenticated={isAuthenticated}
+              user={user}
+            >
+              <RecruiterHome />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/applications"
+          element={
+            <ProtectedRoute
+              allowedRole="recruiter"
+              isAuthenticated={isAuthenticated}
+              user={user}
+            >
+              <RecruiterAppHome />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/applications/select-job"
+          element={
+            <ProtectedRoute
+              allowedRole="recruiter"
+              isAuthenticated={isAuthenticated}
+              user={user}
+            >
+              <SelectJob />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/applications/view-applicants/:jobId"
+          element={
+            <ProtectedRoute
+              allowedRole="recruiter"
+              isAuthenticated={isAuthenticated}
+              user={user}
+            >
+              <ViewApplicants />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/applications/open/:applicationId"
+          element={
+            <ProtectedRoute
+              allowedRole="recruiter"
+              isAuthenticated={isAuthenticated}
+              user={user}
+            >
+              <OpenApplication />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/member/jobs"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <JobSearch />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/member/jobs/saved"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <SavedJobs />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/member/jobs/:jobId"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <JobDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/jobs"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <RecruiterJobsDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/jobs/create"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <CreateJob />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/jobs/edit/:jobId"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <EditJob />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/jobs/:jobId"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <JobDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
+  );
 }
