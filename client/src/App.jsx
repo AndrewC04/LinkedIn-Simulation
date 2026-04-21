@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext.jsx";
 
+
 const LoginSignupPage = lazy(() => import("./pages/LoginSignupPage.jsx"));
 
 const MemberHome = lazy(() => import("./pages/MemberHome.jsx"));
@@ -23,6 +24,9 @@ const MemberMessages = lazy(() => import("./pages/MemberMessages.jsx"));
 const RecruiterJobsDashboard = lazy(() => import("./pages/RecruiterJobsDashboard.jsx"));
 const CreateJob = lazy(() => import("./pages/CreateJob.jsx"));
 const EditJob = lazy(() => import("./pages/EditJob.jsx"));
+
+const AnalyticsDashboard = lazy(() => import("./pages/AnalyticsDashboard.jsx"));
+
 
 function PageLoader() {
   return (
@@ -263,6 +267,26 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/member/analytics"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <AnalyticsDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/analytics"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <AnalyticsDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

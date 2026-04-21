@@ -17,6 +17,7 @@ export default function LinkedInNav({ userType }) {
           ["/member/jobs", "Jobs"],
           ["/member/applications", "My Applications"],
           ["/member/messages", "Messages"],
+          ["/member/analytics", "Analytics"],
         ]
       : [
           ["/recruiter/home", "Home"],

@@ -1,4 +1,10 @@
+"""
+services/analytics-service/main.py
+Entry point for the Analytics Service.
+Runs on port 8005.
+"""
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from db import init_indexes
 from consumer import start_consumer_thread
@@ -8,13 +14,11 @@ from routers.analytics import router as analytics_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     print("[main] Initializing MongoDB indexes...")
     init_indexes()
     print("[main] Starting Kafka consumer thread...")
     start_consumer_thread()
     yield
-    # Shutdown
     print("[main] Analytics service shutting down.")
 
 
@@ -23,6 +27,14 @@ app = FastAPI(
     description="Kafka event ingestion and analytics dashboards for LinkedIn Simulation.",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:5174"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(events_router)
