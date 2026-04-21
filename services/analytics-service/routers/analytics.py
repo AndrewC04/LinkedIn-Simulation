@@ -52,7 +52,7 @@ def window_start(days: int) -> str:
     return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
 
 
-# Request models 
+# ── Request models ────────────────────────────────────────────────────────────
 
 class TopJobsRequest(BaseModel):
     metric: Optional[str] = "applications"
@@ -74,7 +74,26 @@ class MemberDashboardRequest(BaseModel):
     member_id: str
 
 
-# Endpoints
+class LowTractionRequest(BaseModel):
+    window_days: Optional[int] = 30
+    limit: Optional[int] = 5
+
+
+class ClicksRequest(BaseModel):
+    window_days: Optional[int] = 30
+    limit: Optional[int] = 10
+
+
+class SavedJobsRequest(BaseModel):
+    window_days: Optional[int] = 30
+
+
+class ProfileViewsRequest(BaseModel):
+    member_id: str
+    window_days: Optional[int] = 30
+
+
+# ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.post("/analytics/jobs/top")
 async def top_jobs(req: TopJobsRequest):
@@ -221,3 +240,130 @@ async def member_dashboard(req: MemberDashboardRequest):
 
     cache_set(cache_key, result)
     return {"source": "db", "data": result}
+
+
+@router.post("/analytics/jobs/low-traction")
+async def low_traction_jobs(req: LowTractionRequest):
+    """Top 5 jobs with fewest applications (low traction)."""
+    cache_key = f"low_traction:{req.window_days}:{req.limit}"
+    cached = cache_get(cache_key)
+    if cached:
+        return {"source": "cache", "data": cached}
+
+    since = window_start(req.window_days)
+    pipeline = [
+        {"$match": {
+            "event_type": "application.submitted",
+            "timestamp": {"$gte": since}
+        }},
+        {"$group": {
+            "_id": "$entity.entity_id",
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"count": 1}},
+        {"$limit": req.limit},
+        {"$project": {"job_id": "$_id", "count": 1, "_id": 0}}
+    ]
+
+    try:
+        results = list(events_col.aggregate(pipeline))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    cache_set(cache_key, results)
+    return {"source": "db", "data": results}
+
+
+@router.post("/analytics/jobs/clicks")
+async def clicks_per_job(req: ClicksRequest):
+    """Clicks (views) per job posting from logs."""
+    cache_key = f"clicks:{req.window_days}:{req.limit}"
+    cached = cache_get(cache_key)
+    if cached:
+        return {"source": "cache", "data": cached}
+
+    since = window_start(req.window_days)
+    pipeline = [
+        {"$match": {
+            "event_type": "job.viewed",
+            "timestamp": {"$gte": since}
+        }},
+        {"$group": {
+            "_id": "$entity.entity_id",
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"count": -1}},
+        {"$limit": req.limit},
+        {"$project": {"job_id": "$_id", "count": 1, "_id": 0}}
+    ]
+
+    try:
+        results = list(events_col.aggregate(pipeline))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    cache_set(cache_key, results)
+    return {"source": "db", "data": results}
+
+
+@router.post("/analytics/jobs/saved-per-day")
+async def saved_jobs_per_day(req: SavedJobsRequest):
+    """Number of saved jobs per day over the last N days."""
+    cache_key = f"saved_per_day:{req.window_days}"
+    cached = cache_get(cache_key)
+    if cached:
+        return {"source": "cache", "data": cached}
+
+    since = window_start(req.window_days)
+    pipeline = [
+        {"$match": {
+            "event_type": "job.saved",
+            "timestamp": {"$gte": since}
+        }},
+        {"$group": {
+            "_id": {"$substr": ["$timestamp", 0, 10]},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id": 1}},
+        {"$project": {"date": "$_id", "count": 1, "_id": 0}}
+    ]
+
+    try:
+        results = list(events_col.aggregate(pipeline))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    cache_set(cache_key, results)
+    return {"source": "db", "data": results}
+
+
+@router.post("/analytics/member/profile-views-per-day")
+async def profile_views_per_day(req: ProfileViewsRequest):
+    """Profile views per day for a member over last 30 days."""
+    cache_key = f"profile_views_per_day:{req.member_id}:{req.window_days}"
+    cached = cache_get(cache_key)
+    if cached:
+        return {"source": "cache", "data": cached}
+
+    since = window_start(req.window_days)
+    pipeline = [
+        {"$match": {
+            "event_type": "job.viewed",
+            "actor_id": req.member_id,
+            "timestamp": {"$gte": since}
+        }},
+        {"$group": {
+            "_id": {"$substr": ["$timestamp", 0, 10]},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id": 1}},
+        {"$project": {"date": "$_id", "count": 1, "_id": 0}}
+    ]
+
+    try:
+        results = list(events_col.aggregate(pipeline))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    cache_set(cache_key, results)
+    return {"source": "db", "data": results}
