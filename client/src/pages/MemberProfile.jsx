@@ -8,6 +8,7 @@ import {
   getEducation, addEducation, deleteEducation,
 } from "../api/profileApi.js";
 import { applicationsByMember } from "../api/applicationApi.js";
+import { getConnectionStatus, requestConnection } from "../api/connectionApi.js";
 
 /* ─── Design tokens (match existing pages) ─────────────────────── */
 const C = {
@@ -199,8 +200,10 @@ export default function MemberProfile() {
   const [education, setEducation]   = useState([]);
   const [appCounts, setAppCounts]   = useState({});
   const [recommended, setRecommended] = useState([]);
+  const [connectionStatus, setConnectionStatus] = useState(null);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(null);
+  const [connecting, setConnecting] = useState(false);
 
   const [editing, setEditing]       = useState(false);
   const [saving, setSaving]         = useState(false);
@@ -267,6 +270,21 @@ export default function MemberProfile() {
           const all = searchRes.value.results || [];
           setRecommended(all.filter((m) => m.member_id !== viewingId).slice(0, 5));
         }
+
+        if (!isOwnProfile) {
+          try {
+            const status = await getConnectionStatus(user?.userId, viewingId);
+            if (!cancelled) {
+              setConnectionStatus(status || null);
+            }
+          } catch {
+            if (!cancelled) {
+              setConnectionStatus(null);
+            }
+          }
+        } else {
+          setConnectionStatus(null);
+        }
       } catch {
         if (!cancelled) {
           setError("Profile not found or profile service is offline (port 8001).");
@@ -284,6 +302,20 @@ export default function MemberProfile() {
       cancelled = true;
     };
   }, [viewingId, isOwnProfile]);
+
+  async function handleConnect() {
+    if (!user?.userId || !viewingId || viewingId === user.userId) return;
+
+    setConnecting(true);
+    try {
+      const status = await requestConnection(user.userId, viewingId);
+      setConnectionStatus(status);
+    } catch (e) {
+      setSaveErr(e.message || "Failed to send connection request.");
+    } finally {
+      setConnecting(false);
+    }
+  }
 
   async function handleAddExperience() {
     if (!expDraft.title || !expDraft.company_name) return;
@@ -646,8 +678,30 @@ export default function MemberProfile() {
           {!isOwnProfile && (
             <Card style={{ padding: "20px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <Btn style={{ width: "100%", textAlign: "center" }}>Connect</Btn>
+                <Btn
+                  style={{ width: "100%", textAlign: "center" }}
+                  onClick={handleConnect}
+                  disabled={connecting || connectionStatus?.status === "pending" || connectionStatus?.status === "accepted"}
+                >
+                  {connectionStatus?.status === "accepted"
+                    ? "Connected"
+                    : connectionStatus?.status === "pending"
+                      ? "Pending"
+                      : connecting
+                        ? "Sending…"
+                        : "Connect"}
+                </Btn>
                 <Btn variant="outline" style={{ width: "100%", textAlign: "center" }}>Message</Btn>
+                {connectionStatus?.status === "pending" && (
+                  <div style={{ fontSize: "13px", color: C.muted, textAlign: "center" }}>
+                    Connection request sent.
+                  </div>
+                )}
+                {connectionStatus?.status === "accepted" && (
+                  <div style={{ fontSize: "13px", color: C.muted, textAlign: "center" }}>
+                    You are already connected.
+                  </div>
+                )}
               </div>
             </Card>
           )}
