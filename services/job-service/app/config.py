@@ -21,7 +21,7 @@ class Settings(BaseModel):
     kafka_enabled: bool = os.getenv("KAFKA_ENABLED", "false").lower() == "true"
 
     job_service_host: str = os.getenv("JOB_SERVICE_HOST", "0.0.0.0")
-    job_service_port: int = int(os.getenv("JOB_SERVICE_PORT", "8010"))
+    job_service_port: int = int(os.getenv("JOB_SERVICE_PORT", "8002"))
 
     database_url: str = os.getenv(
     "DATABASE_URL",

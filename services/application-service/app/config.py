@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     app_port: int = 8005
     database_url: str
     enable_kafka: bool = False
-    job_service_url: str = "http://localhost:8004"
-    profile_service_url: str = "http://localhost:8003"
+    job_service_url: str = "http://localhost:8002"
+    profile_service_url: str = "http://localhost:8001"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

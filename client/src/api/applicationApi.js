@@ -1,6 +1,6 @@
-const AUTH_API = "http://localhost:8005";
-const APPLICATIONS_API = "http://localhost:8005";
-const JOBS_API = "http://localhost:8010";
+const AUTH_API = "http://localhost:8005";          // login + submit
+const APPLICATIONS_API = "http://localhost:8003";  // queries
+const JOBS_API = "http://localhost:8002";
 
 const SESSION_KEY = "linkedin_sim_auth_session";
 
@@ -54,7 +54,7 @@ function extractErrorMessage(data, status) {
 }
 
 /* ---------------------------
-   Core POST helper
+   JSON POST helper
 ---------------------------- */
 
 async function postJson(baseUrl, path, body) {
@@ -70,9 +70,31 @@ async function postJson(baseUrl, path, body) {
 
   try {
     data = await res.json();
-  } catch {
-    data = null;
+  } catch {}
+
+  if (!res.ok) {
+    throw new Error(extractErrorMessage(data, res.status));
   }
+
+  return data;
+}
+
+/* ---------------------------
+   FORM POST helper (for file upload)
+---------------------------- */
+
+async function postForm(baseUrl, path, formData) {
+  const res = await fetch(`${baseUrl}${path}`, {
+    method: "POST",
+    headers: authHeaders(), // ⚠️ no Content-Type
+    body: formData,
+  });
+
+  let data = null;
+
+  try {
+    data = await res.json();
+  } catch {}
 
   if (!res.ok) {
     throw new Error(extractErrorMessage(data, res.status));
@@ -139,6 +161,34 @@ export async function applicationAddNote(
     recruiter_id: recruiterId,
     note,
   });
+}
+
+/* ---------------------------
+   SUBMIT APPLICATION (FIX 🔥)
+---------------------------- */
+
+export async function submitApplication({
+  jobId,
+  memberId,
+  resumeFile,
+  coverLetterFile,
+}) {
+  const formData = new FormData();
+
+  formData.append("job_id", jobId);
+  formData.append("member_id", memberId);
+  formData.append(
+    "idempotency_key",
+    `${Date.now()}-${Math.random().toString(36).substring(2)}`
+  );
+
+  formData.append("resume_file", resumeFile);
+
+  if (coverLetterFile) {
+    formData.append("cover_letter_file", coverLetterFile);
+  }
+
+  return postForm(AUTH_API, "/applications/submit", formData);
 }
 
 /* ---------------------------

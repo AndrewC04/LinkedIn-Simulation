@@ -290,7 +290,7 @@ export default function ViewApplicationDetails() {
                   <div style={styles.value}>
                     {application.resume_url ? (
                       <a
-                        href={`http://localhost:8000${application.resume_url}`}
+                        href={`http://localhost:8003${application.resume_url}`}
                         target="_blank"
                         rel="noreferrer"
                         style={styles.link}
@@ -308,7 +308,7 @@ export default function ViewApplicationDetails() {
                   <div style={styles.value}>
                     {application.cover_letter ? (
                       <a
-                        href={`http://localhost:8000${application.cover_letter}`}
+                        href={`http://localhost:8003${application.cover_letter}`}
                         target="_blank"
                         rel="noreferrer"
                         style={styles.link}
