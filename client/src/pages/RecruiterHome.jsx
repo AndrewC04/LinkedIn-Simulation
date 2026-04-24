@@ -2,7 +2,6 @@ import React from "react";
 import { brand } from "../styles/theme.js";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import LeftProfileRail from "../components/LeftProfileRail.jsx";
-import RightNewsRail from "../components/RightNewsRail.jsx";
 import FeatureCard from "../components/FeatureCard.jsx";
 
 export default function RecruiterHome({ onNavigate }) {
@@ -32,24 +31,11 @@ export default function RecruiterHome({ onNavigate }) {
       padding: "22px",
       boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
     },
-    titleRow: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: "12px",
-      marginBottom: "16px",
-      flexWrap: "wrap",
-    },
-    title: {
-      fontSize: "28px",
-      fontWeight: 800,
-      color: brand.text,
-      marginBottom: "6px",
-    },
     subtitle: {
       color: brand.muted,
       fontSize: "14px",
       lineHeight: 1.5,
+      marginBottom: "16px",
     },
     badge: {
       backgroundColor: "#E8F3FF",
@@ -58,109 +44,212 @@ export default function RecruiterHome({ onNavigate }) {
       borderRadius: "999px",
       fontSize: "12px",
       fontWeight: 800,
+      display: "inline-flex",
+      marginBottom: "18px",
     },
     grid: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
       gap: "14px",
     },
-    actions: {
-      display: "grid",
-      gridTemplateColumns: "repeat(4, 1fr)",
-      gap: "12px",
+    sectionTitle: {
+      fontWeight: 800,
+      fontSize: "20px",
+      marginBottom: "10px",
+      color: brand.text,
+    },
+    postInput: {
+      width: "100%",
+      minHeight: "90px",
+      border: `1px solid ${brand.border}`,
+      borderRadius: "12px",
+      padding: "14px",
+      fontSize: "14px",
+      outline: "none",
+      resize: "none",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      boxSizing: "border-box",
+    },
+    postButtonRow: {
+      display: "flex",
+      justifyContent: "flex-end",
+      marginTop: "14px",
     },
     primaryBtn: {
       backgroundColor: brand.blue,
       color: "white",
       border: "none",
       borderRadius: "999px",
-      padding: "12px 16px",
+      padding: "12px 18px",
       fontWeight: 800,
       cursor: "pointer",
     },
-    secondaryBtn: {
+    postHeader: {
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      marginBottom: "14px",
+    },
+    avatar: {
+      width: "52px",
+      height: "52px",
+      borderRadius: "50%",
+      backgroundColor: "#e8f3ff",
+      color: brand.blue,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontWeight: 800,
+      fontSize: "18px",
+      flexShrink: 0,
+    },
+    postName: {
+      fontWeight: 800,
+      fontSize: "16px",
+      color: brand.text,
+    },
+    postMeta: {
+      fontSize: "13px",
+      color: brand.muted,
+      marginTop: "3px",
+    },
+    postText: {
+      fontSize: "15px",
+      color: brand.text,
+      lineHeight: 1.7,
+      marginBottom: "14px",
+    },
+    postActions: {
+      display: "flex",
+      gap: "12px",
+      flexWrap: "wrap",
+      paddingTop: "12px",
+      borderTop: `1px solid ${brand.border}`,
+    },
+    actionBtn: {
       backgroundColor: "white",
-      color: "#374151",
       border: `1px solid ${brand.border}`,
       borderRadius: "999px",
-      padding: "12px 16px",
+      padding: "10px 14px",
       fontWeight: 700,
+      color: "#374151",
       cursor: "pointer",
+    },
+    rightCardTitle: {
+      fontSize: "18px",
+      fontWeight: 800,
+      color: brand.text,
+      marginBottom: "14px",
+    },
+    newsList: {
+      display: "grid",
+      gap: "14px",
+    },
+    newsItem: {
+      paddingBottom: "12px",
+      borderBottom: `1px solid ${brand.border}`,
+    },
+    newsHeadline: {
+      fontSize: "14px",
+      fontWeight: 700,
+      color: brand.text,
+      lineHeight: 1.4,
+      marginBottom: "4px",
+    },
+    newsMeta: {
+      fontSize: "12px",
+      color: brand.muted,
+      lineHeight: 1.5,
     },
   };
 
   return (
     <div style={styles.page}>
-      <LinkedInNav
-        userType="recruiter"
-        onNavigate={onNavigate}
-        onLogout={() => onNavigate("auth")}
-      />
+      <LinkedInNav userType="recruiter" />
 
       <div style={styles.layout}>
         <LeftProfileRail role="recruiter" />
 
         <div style={styles.centerCol}>
           <div style={styles.card}>
-            <div style={styles.titleRow}>
-              <div>
-                <div style={styles.title}>Recruiter Home</div>
-                <div style={styles.subtitle}>
-                  Organized around recruiter workflows: manage jobs, review applicants, update
-                  status, and leave notes.
-                </div>
-              </div>
-              <div style={styles.badge}>Recruiter Dashboard</div>
+            <div style={styles.sectionTitle}>Make a post</div>
+            <div style={styles.subtitle}>
+              Share an update with your hiring network.
             </div>
 
-            <div style={styles.grid}>
-              <FeatureCard
-                title="Manage Job Postings"
-                description="Create, update, close, and monitor job postings by recruiter."
-                badge="Required"
-              />
-              <FeatureCard
-                title="Review Applicants"
-                description="View submitted applications for a job and inspect candidate details."
-                badge="Required"
-              />
-              <FeatureCard
-                title="Update Status"
-                description="Move applications through submitted, reviewing, interview, offer, and rejected."
-                badge="Required"
-              />
-              <FeatureCard
-                title="Add Recruiter Notes"
-                description="Capture internal decision rationale and review comments for each application."
-                badge="Required"
-              />
+            <textarea
+              style={styles.postInput}
+              placeholder="Share a hiring update, role opening, or recruiting tip..."
+            />
+
+            <div style={styles.postButtonRow}>
+              <button style={styles.primaryBtn}>Post</button>
             </div>
           </div>
 
           <div style={styles.card}>
-            <div style={{ fontWeight: 800, fontSize: "20px", marginBottom: "10px" }}>Quick actions</div>
-            <div style={{ color: brand.muted, fontSize: "14px", marginBottom: "16px" }}>
-              Frontend-only entry points for recruiter-facing application management.
+            <div style={styles.postHeader}>
+              <div style={styles.avatar}>RC</div>
+              <div>
+                <div style={styles.postName}>Recruiter Central</div>
+                <div style={styles.postMeta}>Hiring Team • 3h ago</div>
+              </div>
             </div>
 
-            <div style={styles.actions}>
-              <button style={styles.primaryBtn} onClick={() => onNavigate("manageJobs")}>
-                Manage Jobs
-              </button>
-              <button style={styles.secondaryBtn} onClick={() => onNavigate("applicants")}>
-                View Applicants
-              </button>
-              <button style={styles.secondaryBtn} onClick={() => onNavigate("statusUpdates")}>
-                Update Status
-              </button>
-              <button style={styles.secondaryBtn} onClick={() => onNavigate("notes")}>
-                Add Note
-              </button>
+            <div style={styles.postText}>
+              We are actively reviewing applications for backend, frontend, and full-stack
+              roles this week. Candidates with polished resumes, strong project work, and
+              clear communication are standing out early in the process.
+            </div>
+
+            <div style={styles.postActions}>
+              <button style={styles.actionBtn}>Like</button>
+              <button style={styles.actionBtn}>Comment</button>
+              <button style={styles.actionBtn}>Repost</button>
             </div>
           </div>
         </div>
 
-        <RightNewsRail role="recruiter" />
+        <div style={styles.card}>
+          <div style={styles.rightCardTitle}>LinkedIn News</div>
+
+          <div style={styles.newsList}>
+            <div style={styles.newsItem}>
+              <div style={styles.newsHeadline}>
+                Recruiters are prioritizing candidates with project-based experience
+              </div>
+              <div style={styles.newsMeta}>Top story • 1d ago</div>
+            </div>
+
+            <div style={styles.newsItem}>
+              <div style={styles.newsHeadline}>
+                Hiring teams continue to balance speed with candidate experience
+              </div>
+              <div style={styles.newsMeta}>Hiring trends • 2d ago</div>
+            </div>
+
+            <div style={styles.newsItem}>
+              <div style={styles.newsHeadline}>
+                Internship and new grad pipelines remain competitive in tech
+              </div>
+              <div style={styles.newsMeta}>Campus recruiting • 3d ago</div>
+            </div>
+
+            <div style={styles.newsItem}>
+              <div style={styles.newsHeadline}>
+                More employers are asking recruiters to improve feedback turnaround time
+              </div>
+              <div style={styles.newsMeta}>Workplace news • 4d ago</div>
+            </div>
+
+            <div style={{ ...styles.newsItem, borderBottom: "none", paddingBottom: 0 }}>
+              <div style={styles.newsHeadline}>
+                Application review workflows are becoming more data-driven
+              </div>
+              <div style={styles.newsMeta}>Industry update • 5d ago</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

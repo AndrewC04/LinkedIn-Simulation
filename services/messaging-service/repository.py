@@ -55,6 +55,10 @@ def _collections():
 
 def ensure_indexes() -> None:
     threads, messages = _collections()
+    try:
+        messages.drop_index("idempotency_key_1")
+    except:
+        pass
     threads.create_index([("participant_ids", 1), ("last_message_at", -1)])
     messages.create_index([("thread_id", 1), ("created_at", -1)])
     messages.create_index("idempotency_key", unique=True, sparse=True)
@@ -152,8 +156,9 @@ def send_message(
         "text": text,
         "created_at": now,
         "status": "sent",
-        "idempotency_key": idempotency_key,
     }
+    if idempotency_key:
+        message_doc["idempotency_key"] = idempotency_key
     result = messages.insert_one(message_doc)
     message_doc["_id"] = result.inserted_id
 

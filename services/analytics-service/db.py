@@ -3,7 +3,13 @@ import os
 from dotenv import load_dotenv
 
 # Load .env BEFORE importing shared clients so env vars are available
-load_dotenv()
+load_dotenv(override=True)
+
+from pymongo import MongoClient
+uri = f"mongodb://localhost:27017"
+print("Connecting with URI:", uri)
+client = MongoClient(uri)
+db = client["analytics"]
 
 # Add shared folder and repo root to path
 shared_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
@@ -15,7 +21,7 @@ from mongo_client import get_mongo_db
 from pymongo import ASCENDING, DESCENDING
 
 # Get the shared MongoDB database handle
-db = get_mongo_db()
+#db = get_mongo_db()
 
 # Collections
 events_col = db["events"]

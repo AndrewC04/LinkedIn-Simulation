@@ -23,8 +23,18 @@ from schemas import (
     ThreadResponse,
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(title="Messaging Service", version="0.1.0")
 producer = MessagingProducer()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # tighten this down later
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")

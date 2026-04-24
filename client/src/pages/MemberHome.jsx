@@ -2,7 +2,6 @@ import React from "react";
 import { brand } from "../styles/theme.js";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import LeftProfileRail from "../components/LeftProfileRail.jsx";
-import RightNewsRail from "../components/RightNewsRail.jsx";
 import FeatureCard from "../components/FeatureCard.jsx";
 
 export default function MemberHome({ onNavigate }) {
@@ -64,28 +63,108 @@ export default function MemberHome({ onNavigate }) {
       gridTemplateColumns: "1fr 1fr",
       gap: "14px",
     },
-    actions: {
-      display: "grid",
-      gridTemplateColumns: "repeat(4, 1fr)",
-      gap: "12px",
+    postInput: {
+      width: "100%",
+      minHeight: "90px",
+      border: `1px solid ${brand.border}`,
+      borderRadius: "12px",
+      padding: "14px",
+      fontSize: "14px",
+      outline: "none",
+      resize: "none",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      boxSizing: "border-box",
+    },
+    postButtonRow: {
+      display: "flex",
+      justifyContent: "flex-end",
+      marginTop: "14px",
     },
     primaryBtn: {
       backgroundColor: brand.blue,
       color: "white",
       border: "none",
       borderRadius: "999px",
-      padding: "12px 16px",
+      padding: "12px 18px",
       fontWeight: 800,
       cursor: "pointer",
     },
-    secondaryBtn: {
+    postHeader: {
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      marginBottom: "14px",
+    },
+    avatar: {
+      width: "52px",
+      height: "52px",
+      borderRadius: "50%",
+      backgroundColor: "#e8f3ff",
+      color: brand.blue,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontWeight: 800,
+      fontSize: "18px",
+      flexShrink: 0,
+    },
+    postName: {
+      fontWeight: 800,
+      fontSize: "16px",
+      color: brand.text,
+    },
+    postMeta: {
+      fontSize: "13px",
+      color: brand.muted,
+      marginTop: "3px",
+    },
+    postText: {
+      fontSize: "15px",
+      color: brand.text,
+      lineHeight: 1.7,
+      marginBottom: "14px",
+    },
+    postActions: {
+      display: "flex",
+      gap: "12px",
+      flexWrap: "wrap",
+      paddingTop: "12px",
+      borderTop: `1px solid ${brand.border}`,
+    },
+    actionBtn: {
       backgroundColor: "white",
-      color: "#374151",
       border: `1px solid ${brand.border}`,
       borderRadius: "999px",
-      padding: "12px 16px",
+      padding: "10px 14px",
       fontWeight: 700,
+      color: "#374151",
       cursor: "pointer",
+    },
+    rightCardTitle: {
+      fontSize: "18px",
+      fontWeight: 800,
+      color: brand.text,
+      marginBottom: "14px",
+    },
+    newsList: {
+      display: "grid",
+      gap: "14px",
+    },
+    newsItem: {
+      paddingBottom: "12px",
+      borderBottom: `1px solid ${brand.border}`,
+    },
+    newsHeadline: {
+      fontSize: "14px",
+      fontWeight: 700,
+      color: brand.text,
+      lineHeight: 1.4,
+      marginBottom: "4px",
+    },
+    newsMeta: {
+      fontSize: "12px",
+      color: brand.muted,
+      lineHeight: 1.5,
     },
   };
 
@@ -98,40 +177,75 @@ export default function MemberHome({ onNavigate }) {
 
         <div style={styles.centerCol}>
           <div style={styles.card}>
-            <div style={styles.titleRow}>
-              <div>
-                <div style={styles.title}>Member Dashboard</div>
-                <div style={styles.subtitle}>
-                  Organized around job seeker workflows: browse jobs, apply, track applications, and review feedback.
-                </div>
-              </div>
-              <div style={styles.badge}>Job Seeker Hub</div>
+            <div style={{ fontWeight: 800, fontSize: "20px", marginBottom: "10px" }}>
+              Make a post
+            </div>
+            <div style={{ color: brand.muted, fontSize: "14px", marginBottom: "16px" }}>
+              Share an update with your network.
             </div>
 
-            <div style={styles.grid}>
-              <FeatureCard title="Browse Jobs" description="Explore available job postings matched to your skills and interests." badge="Required" />
-              <FeatureCard title="Submit Applications" description="Apply for jobs with your resume and cover letter." badge="Required" />
-              <FeatureCard title="Track Applications" description="View your application history, status updates, and interview progress." badge="Required" />
-              <FeatureCard title="Saved Jobs" description="Save interesting jobs and return to them when you are ready to apply." badge="Core" />
+            <textarea
+              style={styles.postInput}
+              placeholder="What do you want to talk about?"
+            />
+
+            <div style={styles.postButtonRow}>
+              <button style={styles.primaryBtn}>Post</button>
             </div>
           </div>
 
           <div style={styles.card}>
-            <div style={{ fontWeight: 800, fontSize: "20px", marginBottom: "10px" }}>Quick actions</div>
-            <div style={{ color: brand.muted, fontSize: "14px", marginBottom: "16px" }}>
-              Get started with your job search and application tracking.
+            <div style={styles.postHeader}>
+              <div style={styles.avatar}>RJ</div>
+              <div>
+                <div style={styles.postName}>Reesh Jain</div>
+                <div style={styles.postMeta}>Software Engineer • 2h ago</div>
+              </div>
             </div>
 
-            <div style={styles.actions}>
-              <button style={styles.primaryBtn} onClick={() => onNavigate("jobListings")}>Browse Jobs</button>
-              <button style={styles.secondaryBtn} onClick={() => onNavigate("submitApp")}>Submit Application</button>
-              <button style={styles.secondaryBtn} onClick={() => onNavigate("myApplications")}>Track Applications</button>
-              <button style={styles.secondaryBtn} onClick={() => onNavigate("savedJobs")}>Saved Jobs</button>
+            <div style={styles.postText}>
+              Excited to keep building projects and applying what I have learned in full-stack development.
+              Recently worked on improving my job application tracker and polishing the UI to make it feel more like a real platform.
+            </div>
+
+            <div style={styles.postActions}>
+              <button style={styles.actionBtn}>Like</button>
+              <button style={styles.actionBtn}>Comment</button>
+              <button style={styles.actionBtn}>Repost</button>
             </div>
           </div>
         </div>
 
-        <RightNewsRail role="member" />
+        <div style={styles.card}>
+          <div style={styles.rightCardTitle}>LinkedIn News</div>
+
+          <div style={styles.newsList}>
+            <div style={styles.newsItem}>
+              <div style={styles.newsHeadline}>Tech hiring picks up for entry-level backend roles</div>
+              <div style={styles.newsMeta}>Top story • 1d ago</div>
+            </div>
+
+            <div style={styles.newsItem}>
+              <div style={styles.newsHeadline}>Recruiters say strong portfolios are helping candidates stand out</div>
+              <div style={styles.newsMeta}>Career trends • 2d ago</div>
+            </div>
+
+            <div style={styles.newsItem}>
+              <div style={styles.newsHeadline}>Remote and hybrid internships remain popular among students</div>
+              <div style={styles.newsMeta}>Workplace news • 3d ago</div>
+            </div>
+
+            <div style={styles.newsItem}>
+              <div style={styles.newsHeadline}>More applicants are tailoring resumes for each application</div>
+              <div style={styles.newsMeta}>Job search • 4d ago</div>
+            </div>
+
+            <div style={{ ...styles.newsItem, borderBottom: "none", paddingBottom: 0 }}>
+              <div style={styles.newsHeadline}>Frontend and full-stack roles continue to attract high interest</div>
+              <div style={styles.newsMeta}>Industry update • 5d ago</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
