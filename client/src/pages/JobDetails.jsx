@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import { getJob } from "../api/jobApi.js";
 
@@ -25,6 +25,7 @@ export default function JobDetails() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadJob();
@@ -85,7 +86,7 @@ export default function JobDetails() {
 
             <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
               <button onClick={toggleSave}>{saved ? "Unsave Job" : "Save Job"}</button>
-              <button onClick={() => alert(`Person 5 should route submit application from this job: ${job.job_id}`)}>
+              <button onClick={() => navigate(`/member/jobs/${job.job_id}/apply`)}>
                 Apply
               </button>
             </div>

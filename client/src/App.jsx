@@ -9,6 +9,7 @@ const MemberHome = lazy(() => import("./pages/MemberHome.jsx"));
 const MemberAppHome = lazy(() => import("./pages/MemberAppHome.jsx"));
 const ViewMyApplications = lazy(() => import("./pages/ViewMyApplications.jsx"));
 const ViewApplicationDetails = lazy(() => import("./pages/ViewApplicationDetails.jsx"));
+const SubmitApplication = lazy(() => import("./pages/SubmitApplication.jsx"));
 
 const RecruiterHome = lazy(() => import("./pages/RecruiterHome.jsx"));
 const RecruiterAppHome = lazy(() => import("./pages/RecruiterAppHome.jsx"));
@@ -70,6 +71,15 @@ export default function App() {
               user={user}
             >
               <MemberHome />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/member/jobs/:jobId/apply"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <SubmitApplication />
             </ProtectedRoute>
           }
         />

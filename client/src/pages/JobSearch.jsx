@@ -3,10 +3,15 @@ import LinkedInNav from "../components/LinkedInNav.jsx";
 import JobCard from "../components/JobCard.jsx";
 import JobFilters from "../components/JobFilters.jsx";
 import { searchJobs } from "../api/jobApi.js";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext.jsx"; // 🔥 ADD THIS
 
 const SAVED_JOBS_KEY = "savedJobs";
 
 export default function JobSearch() {
+  const navigate = useNavigate(); // ✅ MOVE HERE
+  const { user } = useAuth();     // 🔥 YOU WERE MISSING THIS
+
   const [filters, setFilters] = useState({
     keyword: "",
     location: "",
@@ -14,6 +19,7 @@ export default function JobSearch() {
     industry: "",
     work_mode: "",
   });
+
   const [jobs, setJobs] = useState([]);
   const [savedJobs, setSavedJobs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -29,13 +35,13 @@ export default function JobSearch() {
     try {
       setLoading(true);
       setError("");
-  
+
       const cleanedFilters = Object.fromEntries(
         Object.entries(filters).filter(
           ([_, value]) => value !== "" && value !== null && value !== undefined
         )
       );
-  
+
       const data = await searchJobs(cleanedFilters, 1, 20);
       setJobs(data.results || []);
     } catch (err) {
@@ -87,7 +93,12 @@ export default function JobSearch() {
           </p>
         </div>
 
-        <JobFilters filters={filters} onChange={setFilters} onSearch={loadJobs} onClear={clearFilters} />
+        <JobFilters
+          filters={filters}
+          onChange={setFilters}
+          onSearch={loadJobs}
+          onClear={clearFilters}
+        />
 
         {error && (
           <div style={{ color: "crimson", marginBottom: 12 }}>
@@ -104,7 +115,13 @@ export default function JobSearch() {
             <JobCard
               key={job.job_id}
               job={job}
-              onView={(jobId) => (window.location.href = `/member/jobs/${jobId}`)}
+              onView={(jobId) => {
+                if (user?.role === "member") {
+                  navigate(`/member/jobs/${jobId}`);
+                } else {
+                  navigate(`/recruiter/jobs/${jobId}`);
+                }
+              }}
               onToggleSave={toggleSave}
               isSaved={savedJobs.some((j) => j.job_id === job.job_id)}
             />
