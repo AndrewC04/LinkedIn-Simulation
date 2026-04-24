@@ -86,8 +86,19 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: linkedin_db
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
       MONGO_HOST: mongodb
+      MONGO_PORT: 27017
+      MONGO_DATABASE: linkedin_events
+      MONGO_USER: root
+      MONGO_PASSWORD: rootpassword
       REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redispassword
+
     ports:
       - "8004:8004"
     command: uvicorn main:app --host 0.0.0.0 --port 8004
@@ -106,8 +117,18 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: linkedin_db
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
       MONGO_HOST: mongodb
+      MONGO_PORT: 27017
+      MONGO_DATABASE: linkedin_events
+      MONGO_USER: root
+      MONGO_PASSWORD: rootpassword
       REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redispassword
     command: python worker.py
 
   # ── Connections API (P6) ──

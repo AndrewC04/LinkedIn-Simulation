@@ -6,6 +6,7 @@ from routers import tasks, websocket
 from messaging.consumer import consume_requests
 from agents.supervisor import run_supervisor
 from dotenv import load_dotenv
+from db.mongo import init_indexes
 import threading
 import logging
 import os
@@ -27,11 +28,12 @@ def kafka_handler(message: dict):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Start Kafka consumer in a background daemon thread
+    init_indexes()
     consumer_thread = threading.Thread(
         target=consume_requests,
         args=(kafka_handler,),
         daemon=True,
-        name="kafka-consumer-thread"
+        name="kafka-consumer-thread",
     )
     consumer_thread.start()
     logger.info("Kafka consumer thread started.")
@@ -45,12 +47,13 @@ app = FastAPI(
     title="LinkedIn AI Service",
     description="Agentic AI recruiter copilot — Resume Parser, Job Matcher, Hiring Assistant",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Register routers
-app.include_router(tasks.router,     prefix="/ai", tags=["AI Tasks"])
+app.include_router(tasks.router, prefix="/ai", tags=["AI Tasks"])
 app.include_router(websocket.router, prefix="/ws", tags=["WebSocket"])
+
 
 @app.get("/health")
 def health_check():

@@ -23,10 +23,23 @@ from schemas import (
     ThreadResponse,
 )
 
+import logging
+from typing import Optional
+
+logger = logging.getLogger(__name__)
+
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Messaging Service", version="0.1.0")
-producer = MessagingProducer()
+_producer: Optional[MessagingProducer] = None
+
+
+def get_producer() -> MessagingProducer:
+    global _producer
+    if _producer is None:
+        _producer = MessagingProducer()
+    return _producer
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -102,14 +115,21 @@ def send_message_endpoint(thread_id: str, request: SendMessageRequest):
     recipient_ids = [
         pid for pid in thread["participant_ids"] if pid != request.sender_id
     ]
-    producer.publish_message_sent(
-        actor_id=request.sender_id,
-        thread_id=thread_id,
-        message_id=message["message_id"],
-        recipient_ids=recipient_ids,
-        preview=request.text[:120],
-        idempotency_key=request.idempotency_key,
-    )
+    try:
+        get_producer().publish_message_sent(
+            actor_id=request.sender_id,
+            thread_id=thread_id,
+            message_id=message["message_id"],
+            recipient_ids=recipient_ids,
+            preview=request.text[:120],
+            idempotency_key=request.idempotency_key,
+        )
+    except Exception as exc:
+        logger.error(
+            "Failed to publish message.sent event, message saved but event lost: %s",
+            exc,
+        )
+
     return message
 
 
@@ -120,7 +140,8 @@ def mark_read_endpoint(thread_id: str, request: MarkReadRequest):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=400, detail="Invalid thread id") from exc
+        logger.error("Unexpected error in mark_read_endpoint: %s", exc)
+        raise HTTPException(status_code=500, detail="Internal server error") from exc
 
     return {"ok": True, "thread_id": thread_id, "member_id": request.member_id}
 

@@ -33,6 +33,7 @@ def _mark_processed(idempotency_key: str, event_type: str) -> None:
             ),
             {"key": idempotency_key, "event_type": event_type},
         )
+        db.commit()
 
 
 def process_event(event: dict) -> None:

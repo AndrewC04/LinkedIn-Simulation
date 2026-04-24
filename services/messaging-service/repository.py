@@ -3,10 +3,12 @@ from typing import Any, Dict, List, Optional
 
 import bootstrap  # noqa: F401
 from bson import ObjectId
+import logging
 
 from shared.mongo_client import get_mongo_db
 from shared.redis_cache import cache_delete, cache_get, cache_set
 
+logger = logging.getLogger(__name__)
 
 THREAD_LIST_TTL_SECONDS = 120
 UNREAD_COUNT_TTL_SECONDS = 60
@@ -16,8 +18,8 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _thread_list_key(member_id: str) -> str:
-    return f"thread_list:{member_id}"
+def _thread_list_key(member_id: str, limit: int = 20) -> str:
+    return f"thread_list:{member_id}:{limit}"
 
 
 def _unread_count_key(member_id: str) -> str:
@@ -59,9 +61,12 @@ def ensure_indexes() -> None:
         messages.drop_index("idempotency_key_1")
     except:
         pass
-    threads.create_index([("participant_ids", 1), ("last_message_at", -1)])
-    messages.create_index([("thread_id", 1), ("created_at", -1)])
-    messages.create_index("idempotency_key", unique=True, sparse=True)
+    try:
+        threads.create_index([("participant_ids", 1), ("last_message_at", -1)])
+        messages.create_index([("thread_id", 1), ("created_at", -1)])
+        messages.create_index("idempotency_key", unique=True, sparse=True)
+    except Exception as exc:
+        logger.error("Failed to create indexes: %s", exc)
 
 
 def create_thread(participant_ids: List[str]) -> Dict[str, Any]:
@@ -88,16 +93,17 @@ def create_thread(participant_ids: List[str]) -> Dict[str, Any]:
     doc["_id"] = result.inserted_id
 
     for pid in participants:
-        cache_delete(_thread_list_key(pid))
+        cache_delete(_thread_list_key(pid, 20))
+        cache_delete(_thread_list_key(pid, 50))
         cache_delete(_unread_count_key(pid))
 
     return _doc_to_thread_response(doc, participants[0])
 
 
 def list_threads_for_member(member_id: str, limit: int = 20) -> List[Dict[str, Any]]:
-    cached = cache_get(_thread_list_key(member_id))
+    cached = cache_get(_thread_list_key(member_id, limit))
     if cached:
-        return cached[:limit]
+        return cached
 
     threads, _ = _collections()
     docs = list(
@@ -177,7 +183,8 @@ def send_message(
     threads.update_one({"_id": thread["_id"]}, update_doc)
 
     for pid in thread["participant_ids"]:
-        cache_delete(_thread_list_key(pid))
+        cache_delete(_thread_list_key(pid, 20))
+        cache_delete(_thread_list_key(pid, 50))
         cache_delete(_unread_count_key(pid))
 
     return _doc_to_message_response(message_doc)
