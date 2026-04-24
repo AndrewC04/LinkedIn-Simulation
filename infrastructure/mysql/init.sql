@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS members (
     summary           TEXT,
     skills            JSON,                               -- ["Python","SQL",…]
     profile_photo_url VARCHAR(500),
+    banner_photo_url  VARCHAR(500),
     resume_url        VARCHAR(500),
     resume_text       TEXT,                               
     connections_count INT          DEFAULT 0,

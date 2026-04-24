@@ -6,8 +6,9 @@ import {
   getMemberProfile, updateMemberProfile, searchMembers,
   getExperience, addExperience, deleteExperience,
   getEducation, addEducation, deleteEducation,
+  uploadPhoto,
+  uploadBanner,
 } from "../api/profileApi.js";
-import { applicationsByMember } from "../api/applicationApi.js";
 import { getConnectionStatus, requestConnection } from "../api/connectionApi.js";
 
 /* ─── Design tokens (match existing pages) ─────────────────────── */
@@ -25,13 +26,6 @@ const C = {
 };
 
 /* ─── Status badge colours ──────────────────────────────────────── */
-const STATUS_STYLE = {
-  submitted: { bg: "#e8f3ff", color: "#0a66c2" },
-  reviewing: { bg: "#fff7e6", color: "#b26b00" },
-  interview: { bg: "#f3e8ff", color: "#7c3aed" },
-  offer:     { bg: "#e8f7ee", color: "#15803d" },
-  rejected:  { bg: "#fff1f2", color: "#be123c" },
-};
 
 /* ─── Helpers ───────────────────────────────────────────────────── */
 function initials(name = "") {
@@ -135,40 +129,6 @@ function Field({ label, value, onChange, multiline = false, placeholder = "" }) 
   );
 }
 
-function StatusBadge({ status }) {
-  const s = STATUS_STYLE[status] || { bg: "#f3f4f6", color: "#374151" };
-  return (
-    <span style={{ backgroundColor: s.bg, color: s.color, borderRadius: "999px", padding: "4px 10px", fontSize: "12px", fontWeight: 700, textTransform: "capitalize", display: "inline-block" }}>
-      {status}
-    </span>
-  );
-}
-
-/* ─── Mini bar chart for app status ────────────────────────────── */
-function StatusChart({ counts }) {
-  const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
-  const statuses = ["submitted", "reviewing", "interview", "offer", "rejected"];
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-      {statuses.map((s) => {
-        const pct = Math.round(((counts[s] || 0) / total) * 100);
-        const col = STATUS_STYLE[s]?.color || C.muted;
-        const bg  = STATUS_STYLE[s]?.bg || "#f3f4f6";
-        return (
-          <div key={s}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
-              <span style={{ fontWeight: 600, color: C.text, textTransform: "capitalize" }}>{s}</span>
-              <span style={{ color: C.muted }}>{counts[s] || 0}</span>
-            </div>
-            <div style={{ height: "10px", borderRadius: "999px", backgroundColor: "#f0f0f0", overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${pct}%`, backgroundColor: col, borderRadius: "999px", transition: "width 0.5s ease" }} />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 /* ─── Recommended member card ───────────────────────────────────── */
 function RecommendedCard({ member }) {
@@ -190,7 +150,7 @@ function RecommendedCard({ member }) {
 ══════════════════════════════════════════════════════════════════ */
 export default function MemberProfile() {
   const { memberId: paramId } = useParams();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const viewingId = paramId || user?.userId;
   const isOwnProfile = !paramId || paramId === user?.userId;
@@ -198,12 +158,12 @@ export default function MemberProfile() {
   const [profile, setProfile]       = useState(null);
   const [experience, setExperience] = useState([]);
   const [education, setEducation]   = useState([]);
-  const [appCounts, setAppCounts]   = useState({});
   const [recommended, setRecommended] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(null);
   const [connecting, setConnecting] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   const [editing, setEditing]       = useState(false);
   const [saving, setSaving]         = useState(false);
@@ -239,16 +199,16 @@ export default function MemberProfile() {
 
         setProfile(p);
         setDraft({
+          email:    p.email    || "",
           headline: p.headline || "",
           location: p.location || "",
           summary: p.summary || "",
           skills: (p.skills || []).join(", "),
         });
 
-        const [expRes, eduRes, appsRes, searchRes] = await Promise.allSettled([
+        const [expRes, eduRes, searchRes] = await Promise.allSettled([
           getExperience(viewingId),
           getEducation(viewingId),
-          isOwnProfile ? applicationsByMember(viewingId, 1, 200) : Promise.resolve(null),
           searchMembers({}, 1, 8),
         ]);
 
@@ -256,15 +216,6 @@ export default function MemberProfile() {
 
         if (expRes.status === "fulfilled") setExperience(expRes.value.experience || []);
         if (eduRes.status === "fulfilled") setEducation(eduRes.value.education || []);
-
-        if (appsRes.status === "fulfilled" && appsRes.value) {
-          const apps = appsRes.value.applications || [];
-          const counts = {};
-          apps.forEach((a) => {
-            counts[a.status] = (counts[a.status] || 0) + 1;
-          });
-          setAppCounts(counts);
-        }
 
         if (searchRes.status === "fulfilled") {
           const all = searchRes.value.results || [];
@@ -363,20 +314,25 @@ export default function MemberProfile() {
     setSaveErr(null);
     try {
       const skillsArr = draft.skills.split(",").map((s) => s.trim()).filter(Boolean);
+      const emailChanged = draft.email && draft.email !== profile.email;
       await updateMemberProfile(viewingId, {
+        email:    draft.email,
         headline: draft.headline,
         location: draft.location,
         summary:  draft.summary,
         skills:   skillsArr,
       });
-      setProfile((p) => ({ ...p, headline: draft.headline, location: draft.location, summary: draft.summary, skills: skillsArr }));
+      setProfile((p) => ({ ...p, email: draft.email, headline: draft.headline, location: draft.location, summary: draft.summary, skills: skillsArr }));
       setEditing(false);
+      if (emailChanged) {
+        logout();
+      }
     } catch (e) {
       setSaveErr(e.message || "Save failed.");
     } finally {
       setSaving(false);
     }
-  }, [draft, viewingId]);
+  }, [draft, viewingId, profile, logout]);
 
   /* ── render states ── */
   if (loading) {
@@ -407,7 +363,6 @@ export default function MemberProfile() {
     s.toLowerCase().includes(skillSearch.toLowerCase())
   );
 
-  const totalApps = Object.values(appCounts).reduce((a, b) => a + b, 0);
 
   /* ── layout ── */
   return (
@@ -422,12 +377,56 @@ export default function MemberProfile() {
           {/* ── Header card ── */}
           <Card>
             {/* Cover */}
-            <div style={{ height: "128px", background: "linear-gradient(135deg, #0a66c2 0%, #0056a3 100%)", borderRadius: `${C.radius} ${C.radius} 0 0` }} />
+            <div style={{ position: "relative", height: "128px", borderRadius: `${C.radius} ${C.radius} 0 0`, overflow: "hidden", background: "linear-gradient(135deg, #0a66c2 0%, #0056a3 100%)" }}>
+              {profile.banner_photo_url && (
+                <img src={profile.banner_photo_url} alt="banner" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              )}
+              {isOwnProfile && (
+                <label style={{ position: "absolute", bottom: "10px", right: "12px", backgroundColor: "rgba(0,0,0,0.45)", color: "white", fontSize: "12px", fontWeight: 600, padding: "5px 10px", borderRadius: "6px", cursor: "pointer", backdropFilter: "blur(2px)" }}>
+                  ✎ Edit cover
+                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const res = await uploadBanner(viewingId, file);
+                      setProfile((p) => ({ ...p, banner_photo_url: res.banner_photo_url }));
+                    } catch (err) {
+                      alert(err.message || "Upload failed");
+                    } finally {
+                      e.target.value = "";
+                    }
+                  }} />
+                </label>
+              )}
+            </div>
 
             <div style={{ padding: "0 28px 28px", position: "relative" }}>
               {/* Avatar */}
-              <div style={{ width: "100px", height: "100px", borderRadius: "50%", border: "4px solid white", marginTop: "-50px", backgroundColor: C.blueLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "36px", fontWeight: 800, color: C.blue, boxShadow: "0 2px 8px rgba(0,0,0,0.12)", userSelect: "none" }}>
-                {initials(profile.full_name)}
+              <div style={{ position: "relative", width: "100px", marginTop: "-50px", display: "inline-block" }}>
+                <div style={{ width: "100px", height: "100px", borderRadius: "50%", border: "4px solid white", backgroundColor: C.blueLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "36px", fontWeight: 800, color: C.blue, boxShadow: "0 2px 8px rgba(0,0,0,0.12)", userSelect: "none", overflow: "hidden" }}>
+                  {profile.profile_photo_url
+                    ? <img src={profile.profile_photo_url} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : initials(profile.full_name)}
+                </div>
+                {isOwnProfile && (
+                  <label style={{ position: "absolute", bottom: 0, right: 0, width: "28px", height: "28px", borderRadius: "50%", backgroundColor: C.blue, border: "2px solid white", display: "flex", alignItems: "center", justifyContent: "center", cursor: photoUploading ? "wait" : "pointer" }} title="Change photo">
+                    <span style={{ color: "white", fontSize: "14px", lineHeight: 1 }}>✎</span>
+                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setPhotoUploading(true);
+                      try {
+                        const res = await uploadPhoto(viewingId, file);
+                        setProfile((p) => ({ ...p, profile_photo_url: res.profile_photo_url }));
+                      } catch (err) {
+                        alert(err.message || "Upload failed");
+                      } finally {
+                        setPhotoUploading(false);
+                        e.target.value = "";
+                      }
+                    }} />
+                  </label>
+                )}
               </div>
 
               {/* Edit / Save buttons */}
@@ -451,12 +450,19 @@ export default function MemberProfile() {
                 {editing ? (
                   <div style={{ marginTop: "16px" }}>
                     {saveErr && <div style={{ backgroundColor: "#fef2f2", border: "1px solid #fca5a5", borderRadius: "8px", padding: "10px 14px", color: "#b91c1c", fontSize: "13px", marginBottom: "12px" }}>{saveErr}</div>}
+                    <Field label="Email" value={draft.email} onChange={(v) => setDraft((d) => ({ ...d, email: v }))} placeholder="e.g. you@example.com" />
+                    {draft.email !== profile.email && draft.email && (
+                      <div style={{ fontSize: "12px", color: "#92400e", backgroundColor: "#fffbeb", border: "1px solid #fcd34d", borderRadius: "6px", padding: "6px 10px", marginTop: "-8px", marginBottom: "12px" }}>
+                        You will be logged out and will need to sign in with your new email.
+                      </div>
+                    )}
                     <Field label="Headline" value={draft.headline} onChange={(v) => setDraft((d) => ({ ...d, headline: v }))} placeholder="e.g. Software Engineer at Acme" />
                     <Field label="Location" value={draft.location} onChange={(v) => setDraft((d) => ({ ...d, location: v }))} placeholder="e.g. San Francisco, CA" />
                   </div>
                 ) : (
                   <>
-                    <div style={{ fontSize: "16px", color: C.muted, marginTop: "4px" }}>{profile.headline || <span style={{ fontStyle: "italic" }}>No headline</span>}</div>
+                    {profile.email && <div style={{ fontSize: "14px", color: C.muted, marginTop: "4px" }}>{profile.email}</div>}
+                    <div style={{ fontSize: "16px", color: C.muted, marginTop: "4px" }}>{profile.headline || "Looking for work"}</div>
                     <div style={{ fontSize: "14px", color: C.muted, marginTop: "4px" }}>{profile.location || ""}</div>
                   </>
                 )}
@@ -468,12 +474,6 @@ export default function MemberProfile() {
                   <div style={{ fontSize: "20px", fontWeight: 800, color: C.blue }}>{profile.connections ?? 0}</div>
                   <div style={{ fontSize: "13px", color: C.muted }}>Connections</div>
                 </div>
-                {isOwnProfile && totalApps > 0 && (
-                  <div>
-                    <div style={{ fontSize: "20px", fontWeight: 800, color: C.blue }}>{totalApps}</div>
-                    <div style={{ fontSize: "13px", color: C.muted }}>Applications</div>
-                  </div>
-                )}
               </div>
             </div>
           </Card>
@@ -626,32 +626,6 @@ export default function MemberProfile() {
             )}
           </Card>
 
-          {/* ── Application dashboard (own profile only) ── */}
-          {isOwnProfile && (
-            <Card style={{ padding: "24px" }}>
-              <SectionTitle>Application Dashboard</SectionTitle>
-              {totalApps === 0 ? (
-                <div style={{ color: C.muted, fontSize: "14px", fontStyle: "italic" }}>No applications yet. Start applying to jobs!</div>
-              ) : (
-                <>
-                  <div style={{ fontSize: "14px", color: C.muted, marginBottom: "20px" }}>
-                    {totalApps} total application{totalApps !== 1 ? "s" : ""} across all statuses
-                  </div>
-                  <StatusChart counts={appCounts} />
-
-                  {/* Legend */}
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "20px" }}>
-                    {Object.entries(appCounts).map(([status, count]) => (
-                      <span key={status} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <StatusBadge status={status} />
-                        <span style={{ fontSize: "13px", color: C.muted }}>{count}</span>
-                      </span>
-                    ))}
-                  </div>
-                </>
-              )}
-            </Card>
-          )}
         </div>
 
         {/* ─── RIGHT SIDEBAR ───────────────────────────────────── */}
@@ -664,7 +638,6 @@ export default function MemberProfile() {
               {[
                 ["Connections", profile.connections ?? 0],
                 ["Skills listed", (profile.skills || []).length],
-                ...(isOwnProfile ? [["Applications", totalApps]] : []),
               ].map(([label, val]) => (
                 <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
                   <span style={{ color: C.muted }}>{label}</span>

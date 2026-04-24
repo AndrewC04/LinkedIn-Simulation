@@ -94,7 +94,8 @@ class ProfileService:
                 text("""
                     SELECT member_id, first_name, last_name, email, headline,
                            location_city, location_state, summary, skills,
-                           connections_count, profile_views, created_at, updated_at
+                           connections_count, profile_views, created_at, updated_at,
+                           profile_photo_url, banner_photo_url
                     FROM members
                     WHERE member_id = :id
                 """),
@@ -109,13 +110,16 @@ class ProfileService:
         response_data = {
             "member_id": result[0],
             "full_name": f"{result[1]} {result[2]}",
-            "headline": result[3],
+            "email": result[3],
+            "headline": result[4],
             "location": location,
             "skills": json.loads(result[8]) if result[8] else None,
             "summary": result[7],
             "connections": result[9] or 0,
             "created_at": result[11] or datetime.utcnow(),
-            "updated_at": result[12] or datetime.utcnow()
+            "updated_at": result[12] or datetime.utcnow(),
+            "profile_photo_url": result[13],
+            "banner_photo_url": result[14],
         }
 
         cache_set(cache_key, response_data, ttl_seconds=300)
@@ -136,12 +140,24 @@ class ProfileService:
             if not check:
                 return None
 
+            # Check new email isn't already taken by another member
+            if "email" in fields and fields["email"]:
+                conflict = db.execute(
+                    text("SELECT member_id FROM members WHERE email = :email AND member_id != :id"),
+                    {"email": fields["email"], "id": member_id}
+                ).fetchone()
+                if conflict:
+                    raise ValueError(f"Email already in use: {fields['email']}")
+
             # Map API fields to DB columns
             field_mapping = {
                 "headline": "headline",
                 "summary": "summary",
                 "location": "location_city",
-                "skills": "skills"
+                "skills": "skills",
+                "email": "email",
+                "profile_photo_url": "profile_photo_url",
+                "banner_photo_url": "banner_photo_url"
             }
 
             update_dict = {}
@@ -222,6 +238,10 @@ class ProfileService:
         if filters.get('keyword'):
             where_clauses.append("(headline LIKE :keyword OR summary LIKE :keyword)")
             params['keyword'] = f"%{filters['keyword']}%"
+
+        if filters.get('name'):
+            where_clauses.append("CONCAT(first_name, ' ', last_name) LIKE :name")
+            params['name'] = f"%{filters['name']}%"
 
         where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
 

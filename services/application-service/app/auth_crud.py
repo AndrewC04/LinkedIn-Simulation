@@ -32,10 +32,10 @@ def create_member_account(
         text(
             """
             INSERT INTO members (
-                member_id, first_name, last_name, email, password_hash
+                member_id, first_name, last_name, email, password_hash, headline
             )
             VALUES (
-                :member_id, :first_name, :last_name, :email, :password_hash
+                :member_id, :first_name, :last_name, :email, :password_hash, :headline
             )
             """
         ),
@@ -45,6 +45,7 @@ def create_member_account(
             "last_name": last_name,
             "email": email,
             "password_hash": password_hash,
+            "headline": "Looking for work",
         },
     )
     db.commit()

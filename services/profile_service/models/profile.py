@@ -49,8 +49,11 @@ class MemberGetResponse(BaseModel):
     """POST /members/get response."""
     member_id: str
     full_name: str
-    headline: str
+    email: Optional[str] = None
+    headline: Optional[str] = None
     location: str
+    profile_photo_url: Optional[str] = None
+    banner_photo_url: Optional[str] = None
     skills: Optional[List[str]] = None
     summary: Optional[str] = None
     connections: int = 0
@@ -98,6 +101,7 @@ class MemberDeleteResponse(BaseModel):
 
 class SearchFilters(BaseModel):
     """Search filter options."""
+    name: Optional[str] = None
     skill: Optional[str] = None
     location: Optional[str] = None
     keyword: Optional[str] = None
@@ -148,6 +152,10 @@ class ExperienceAddRequest(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     description: Optional[str] = None
+
+    @validator("end_date", "start_date", "location", "description", pre=True)
+    def empty_str_to_none(cls, v):
+        return None if v == "" else v
 
 
 class ExperienceDeleteRequest(BaseModel):

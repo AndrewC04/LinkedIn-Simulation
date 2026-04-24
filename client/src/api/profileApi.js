@@ -39,6 +39,35 @@ export function deleteExperience(experienceId) {
   return postJson(`${PROFILE_API}/members/experience/delete`, { experience_id: experienceId });
 }
 
+// Photo upload
+export async function uploadPhoto(memberId, file) {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${PROFILE_API}/members/${memberId}/photo`, {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Upload failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function uploadBanner(memberId, file) {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${PROFILE_API}/members/${memberId}/banner`, {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Upload failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 // Education
 export function getEducation(memberId) {
   return postJson(`${PROFILE_API}/members/education/get`, { member_id: memberId });

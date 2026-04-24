@@ -6,8 +6,9 @@ All endpoints use POST (as per spec) with standard request/response formats.
 API Spec Source: Group Project API Documentation
 """
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, UploadFile, File
 from typing import List, Optional
+import os, uuid, shutil
 
 from services.profile_service.models.profile import (
     MemberCreateRequest, MemberCreateResponse,
@@ -100,7 +101,10 @@ async def update_member(request: MemberUpdateRequest):
             detail="At least one field must be provided for update"
         )
 
-    result = ProfileService.update_member(request.member_id, request.fields)
+    try:
+        result = ProfileService.update_member(request.member_id, request.fields)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -211,3 +215,54 @@ async def delete_education(request: EducationDeleteRequest):
     if not deleted:
         raise HTTPException(status_code=404, detail="Education entry not found")
     return {"deleted": True, "education_id": request.education_id}
+
+
+UPLOAD_DIR = "/app/uploads/avatars"
+ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+
+@router.post("/members/{member_id}/photo")
+async def upload_photo(member_id: str, file: UploadFile = File(...)):
+    if file.content_type not in ALLOWED_TYPES:
+        raise HTTPException(status_code=400, detail="Only JPEG, PNG, WebP, or GIF images are allowed")
+
+    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
+    filename = f"{member_id}_{uuid.uuid4().hex[:8]}{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    with open(filepath, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    photo_url = f"http://localhost:8001/uploads/avatars/{filename}"
+
+    try:
+        ProfileService.update_member(member_id, {"profile_photo_url": photo_url})
+    except Exception:
+        os.remove(filepath)
+        raise HTTPException(status_code=500, detail="Failed to save photo URL")
+
+    return {"profile_photo_url": photo_url}
+
+
+@router.post("/members/{member_id}/banner")
+async def upload_banner(member_id: str, file: UploadFile = File(...)):
+    if file.content_type not in ALLOWED_TYPES:
+        raise HTTPException(status_code=400, detail="Only JPEG, PNG, WebP, or GIF images are allowed")
+
+    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
+    filename = f"banner_{member_id}_{uuid.uuid4().hex[:8]}{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    with open(filepath, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    banner_url = f"http://localhost:8001/uploads/avatars/{filename}"
+
+    try:
+        ProfileService.update_member(member_id, {"banner_photo_url": banner_url})
+    except Exception:
+        os.remove(filepath)
+        raise HTTPException(status_code=500, detail="Failed to save banner URL")
+
+    return {"banner_photo_url": banner_url}
