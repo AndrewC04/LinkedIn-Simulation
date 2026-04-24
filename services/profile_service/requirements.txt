@@ -4,5 +4,6 @@ SQLAlchemy
 PyMySQL
 redis
 confluent-kafka
-pydantic
 python-dotenv
+pydantic
+email-validator

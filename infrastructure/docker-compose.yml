@@ -148,6 +148,128 @@ services:
       REDIS_HOST: redis
     command: python worker.py
 
+  # ── Profile API (P3) ──
+  profile-api:
+    build:
+      context: ..
+      dockerfile: services/profile_service/Dockerfile
+    container_name: profile-api
+    depends_on:
+      - kafka
+      - mysql
+      - mongodb
+      - redis
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: linkedin_db
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+      MONGO_HOST: mongodb
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redispassword
+    ports:
+      - "8001:8001"
+
+  # ── Job API (P4) ──
+  job-api:
+    build:
+      context: ..
+      dockerfile: services/job-service/Dockerfile
+    container_name: job-api
+    depends_on:
+      - kafka
+      - mysql
+      - redis
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: linkedin_db
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+      DATABASE_URL: mysql+pymysql://appuser:apppassword@mysql:3306/linkedin_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redispassword
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_ENABLED: "false"
+    ports:
+      - "8002:8002"
+
+  # ── Application API (P5) ──
+  application-api:
+    build:
+      context: ..
+      dockerfile: services/application-service/Dockerfile
+    container_name: application-api
+    depends_on:
+      - mysql
+      - kafka
+    environment:
+      APP_NAME: application-service
+      APP_ENV: docker
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8003
+      DATABASE_URL: mysql+pymysql://appuser:apppassword@mysql:3306/linkedin_db
+      ENABLE_KAFKA: "false"
+      JOB_SERVICE_URL: http://job-api:8002
+      PROFILE_SERVICE_URL: http://profile-api:8001
+    ports:
+      - "8003:8003"
+
+  # ── Analytics API (P7) ──
+  analytics-api:
+    build:
+      context: ..
+      dockerfile: services/analytics-service/Dockerfile
+    container_name: analytics-api
+    depends_on:
+      - kafka
+      - mysql
+      - mongodb
+      - redis
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: linkedin_db
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+      MONGO_HOST: mongodb
+      MONGO_PORT: 27017
+      MONGO_DATABASE: linkedin_events
+      MONGO_USER: root
+      MONGO_PASSWORD: rootpassword
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redispassword
+    ports:
+      - "8005:8005"
+
+  # ── AI API (P8) ──
+  ai-api:
+    build:
+      context: ..
+      dockerfile: services/ai_service/Dockerfile
+    container_name: ai-api
+    depends_on:
+      - kafka
+      - mongodb
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_TOPIC_REQUESTS: ai.requests
+      KAFKA_TOPIC_RESULTS: ai.results
+      MONGO_HOST: mongodb
+      MONGO_PORT: 27017
+      MONGO_USER: root
+      MONGO_PASSWORD: rootpassword
+      MONGO_DATABASE: linkedin_events
+    ports:
+      - "8006:8006"
+
 volumes:
   mysql_data:
   mongo_data:
