@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { brand } from "../styles/theme.js";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { getConnectionCount } from "../api/connectionApi.js";
 
 export default function LeftProfileRail({ role }) {
   const { user } = useAuth();
+  const [connectionCount, setConnectionCount] = useState(0);
 
   const name = user?.displayName || (role === "member" ? "Member User" : "Recruiter User");
   const headline =
@@ -18,6 +20,40 @@ export default function LeftProfileRail({ role }) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadConnectionCount() {
+      if (role !== "member" || !user?.userId) {
+        setConnectionCount(0);
+        return;
+      }
+
+      try {
+        const res = await getConnectionCount(user.userId);
+        if (!cancelled) {
+          setConnectionCount(Number(res?.total_connections) || 0);
+        }
+      } catch {
+        if (!cancelled) {
+          setConnectionCount(0);
+        }
+      }
+    }
+
+    function handleConnectionsUpdated() {
+      loadConnectionCount();
+    }
+
+    window.addEventListener("connections:updated", handleConnectionsUpdated);
+    loadConnectionCount();
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("connections:updated", handleConnectionsUpdated);
+    };
+  }, [role, user?.userId]);
 
   const styles = {
     card: {
@@ -158,7 +194,7 @@ export default function LeftProfileRail({ role }) {
           </div>
           <div style={styles.statRow}>
             <span>Connections</span>
-            <span style={styles.value}>128</span>
+            <span style={styles.value}>{connectionCount}</span>
           </div>
         </div>
 

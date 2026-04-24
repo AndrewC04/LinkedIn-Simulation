@@ -3,6 +3,8 @@ import { NavLink, useNavigate, Link } from "react-router-dom";
 import { brand } from "../styles/theme.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { searchMembers } from "../api/profileApi.js";
+import { listPendingReceived } from "../api/connectionApi.js";
+import { listThreads } from "../api/messagingApi.js";
 
 function MemberSearch() {
   const [query, setQuery] = useState("");
@@ -210,6 +212,8 @@ function MemberSearch() {
 export default function LinkedInNav({ userType }) {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const [connectionBadgeCount, setConnectionBadgeCount] = useState(0);
+  const [messageBadgeCount, setMessageBadgeCount] = useState(0);
 
   const resolvedUserType = userType || user?.role || "member";
 
@@ -219,6 +223,7 @@ export default function LinkedInNav({ userType }) {
           ["/member/home", "Home"],
           ["/member/jobs", "Jobs"],
           ["/member/applications", "My Applications"],
+          ["/member/connections", "Connections"],
           ["/member/messages", "Messages"],
           ["/member/analytics", "Analytics"],
         ]
@@ -235,6 +240,53 @@ export default function LinkedInNav({ userType }) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  async function refreshBadges() {
+    if (resolvedUserType !== "member" || !user?.userId) {
+      setConnectionBadgeCount(0);
+      setMessageBadgeCount(0);
+      return;
+    }
+
+    try {
+      const [pendingConnections, threads] = await Promise.all([
+        listPendingReceived(user.userId, 100, 0),
+        listThreads(user.userId, 100),
+      ]);
+
+      setConnectionBadgeCount(Array.isArray(pendingConnections) ? pendingConnections.length : 0);
+      setMessageBadgeCount(
+        Array.isArray(threads)
+          ? threads.reduce((sum, thread) => sum + (thread.unread_count || 0), 0)
+          : 0
+      );
+    } catch {
+      setConnectionBadgeCount(0);
+      setMessageBadgeCount(0);
+    }
+  }
+
+  useEffect(() => {
+    refreshBadges();
+  }, [resolvedUserType, user?.userId]);
+
+  useEffect(() => {
+    function handleConnectionsUpdated() {
+      refreshBadges();
+    }
+
+    function handleMessagingUpdated() {
+      refreshBadges();
+    }
+
+    window.addEventListener("connections:updated", handleConnectionsUpdated);
+    window.addEventListener("messaging:updated", handleMessagingUpdated);
+
+    return () => {
+      window.removeEventListener("connections:updated", handleConnectionsUpdated);
+      window.removeEventListener("messaging:updated", handleMessagingUpdated);
+    };
+  }, [resolvedUserType, user?.userId]);
 
   const styles = {
     nav: {
@@ -298,6 +350,25 @@ export default function LinkedInNav({ userType }) {
     activeLink: {
       backgroundColor: "#e8f3ff",
       color: brand.blue,
+    },
+    linkContent: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "8px",
+    },
+    badge: {
+      minWidth: "20px",
+      height: "20px",
+      borderRadius: "999px",
+      padding: "0 6px",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "11px",
+      fontWeight: 800,
+      backgroundColor: brand.blue,
+      color: "white",
+      lineHeight: 1,
     },
     userPill: {
       display: "flex",
@@ -401,7 +472,15 @@ export default function LinkedInNav({ userType }) {
         </div>
 
         <div style={styles.right}>
-          {items.map(([path, label]) => (
+          {items.map(([path, label]) => {
+            const badgeValue =
+              path === "/member/connections"
+                ? connectionBadgeCount
+                : path === "/member/messages"
+                  ? messageBadgeCount
+                  : 0;
+
+            return (
             <NavLink
               key={path}
               to={path}
@@ -410,9 +489,13 @@ export default function LinkedInNav({ userType }) {
                 ...(isActive ? styles.activeLink : {}),
               })}
             >
-              {label}
+              <span style={styles.linkContent}>
+                <span>{label}</span>
+                {badgeValue > 0 ? <span style={styles.badge}>{badgeValue}</span> : null}
+              </span>
             </NavLink>
-          ))}
+            );
+          })}
 
           {resolvedUserType === "member" ? (
             <Link to={`/member/profile/${user?.userId}`} style={styles.clickableUserPill}>

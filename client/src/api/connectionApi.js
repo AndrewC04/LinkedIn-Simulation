@@ -49,3 +49,61 @@ export function requestConnection(requesterId, receiverId) {
     },
   });
 }
+
+export function listConnections(memberId, limit = 200, offset = 0) {
+  return request(
+    `/members/${encodeURIComponent(memberId)}/connections?limit=${limit}&offset=${offset}`
+  );
+}
+
+export function listPendingReceived(memberId, limit = 200, offset = 0) {
+  return request(
+    `/members/${encodeURIComponent(memberId)}/connections/pending-received?limit=${limit}&offset=${offset}`
+  );
+}
+
+export function listPendingSent(memberId, limit = 200, offset = 0) {
+  return request(
+    `/members/${encodeURIComponent(memberId)}/connections/pending-sent?limit=${limit}&offset=${offset}`
+  );
+}
+
+export function acceptConnectionRequest(connectionId, actorId) {
+  return request(`/connections/${encodeURIComponent(connectionId)}/accept`, {
+    method: "POST",
+    body: {
+      actor_id: actorId,
+    },
+  });
+}
+
+export function rejectConnectionRequest(connectionId, actorId) {
+  return request(`/connections/${encodeURIComponent(connectionId)}/reject`, {
+    method: "POST",
+    body: {
+      actor_id: actorId,
+    },
+  });
+}
+
+export function withdrawConnectionRequest(connectionId, requesterId) {
+  return request(
+    `/connections/${encodeURIComponent(connectionId)}/withdraw?requester_id=${encodeURIComponent(requesterId)}`,
+    {
+      method: "DELETE",
+    }
+  );
+}
+
+export function getConnectionCount(memberId) {
+  return request(`/members/${encodeURIComponent(memberId)}/connections/count`);
+}
+
+export function removeConnection(connectionId, actorId) {
+  return request(
+    `/connections/${encodeURIComponent(connectionId)}?actor_id=${encodeURIComponent(actorId)}`,
+    {
+      method: "DELETE",
+    }
+  );
+}

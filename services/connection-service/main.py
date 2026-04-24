@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
-
+from fastapi.middleware.cors import CORSMiddleware
 import bootstrap  # noqa: F401
 from kafka_client import ConnectionsProducer
 from repository import (
@@ -23,6 +23,14 @@ from schemas import (
 )
 
 app = FastAPI(title="Connection Service", version="0.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # tighten later
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 producer = ConnectionsProducer()
 
 
@@ -48,7 +56,9 @@ def create_connection_request(request: ConnectionRequestCreate):
     return conn
 
 
-@app.post("/connections/{connection_id}/accept", response_model=ConnectionStatusResponse)
+@app.post(
+    "/connections/{connection_id}/accept", response_model=ConnectionStatusResponse
+)
 def accept_connection_request(connection_id: str, request: ConnectionActionRequest):
     try:
         conn = accept_connection(connection_id, request.actor_id)
@@ -65,7 +75,9 @@ def accept_connection_request(connection_id: str, request: ConnectionActionReque
     return conn
 
 
-@app.post("/connections/{connection_id}/reject", response_model=ConnectionStatusResponse)
+@app.post(
+    "/connections/{connection_id}/reject", response_model=ConnectionStatusResponse
+)
 def reject_connection_request(connection_id: str, request: ConnectionActionRequest):
     try:
         return reject_connection(connection_id, request.actor_id)
@@ -73,7 +85,9 @@ def reject_connection_request(connection_id: str, request: ConnectionActionReque
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@app.delete("/connections/{connection_id}/withdraw", response_model=ConnectionStatusResponse)
+@app.delete(
+    "/connections/{connection_id}/withdraw", response_model=ConnectionStatusResponse
+)
 def withdraw_request(connection_id: str, requester_id: str = Query(...)):
     try:
         return withdraw_connection_request(connection_id, requester_id)
@@ -90,17 +104,35 @@ def remove_existing_connection(connection_id: str, actor_id: str = Query(...)):
 
 
 @app.get("/members/{member_id}/connections", response_model=list[ConnectionListItem])
-def get_connections(member_id: str, limit: int = Query(default=50, ge=1, le=200), offset: int = Query(default=0, ge=0)):
+def get_connections(
+    member_id: str,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+):
     return list_accepted_connections(member_id=member_id, limit=limit, offset=offset)
 
 
-@app.get("/members/{member_id}/connections/pending-received", response_model=list[ConnectionListItem])
-def get_pending_received(member_id: str, limit: int = Query(default=50, ge=1, le=200), offset: int = Query(default=0, ge=0)):
+@app.get(
+    "/members/{member_id}/connections/pending-received",
+    response_model=list[ConnectionListItem],
+)
+def get_pending_received(
+    member_id: str,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+):
     return list_pending_received(member_id=member_id, limit=limit, offset=offset)
 
 
-@app.get("/members/{member_id}/connections/pending-sent", response_model=list[ConnectionListItem])
-def get_pending_sent(member_id: str, limit: int = Query(default=50, ge=1, le=200), offset: int = Query(default=0, ge=0)):
+@app.get(
+    "/members/{member_id}/connections/pending-sent",
+    response_model=list[ConnectionListItem],
+)
+def get_pending_sent(
+    member_id: str,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+):
     return list_pending_sent(member_id=member_id, limit=limit, offset=offset)
 
 
@@ -109,7 +141,9 @@ def get_status(member_a: str = Query(...), member_b: str = Query(...)):
     return get_connection_status(member_a, member_b)
 
 
-@app.get("/members/{member_id}/connections/count", response_model=ConnectionCountResponse)
+@app.get(
+    "/members/{member_id}/connections/count", response_model=ConnectionCountResponse
+)
 def get_connection_count(member_id: str):
     total = count_accepted_connections(member_id)
     return {"member_id": member_id, "total_connections": total}

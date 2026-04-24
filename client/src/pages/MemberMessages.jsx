@@ -20,7 +20,6 @@ export default function MemberMessages() {
   const [threadProfiles, setThreadProfiles] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [recipientId, setRecipientId] = useState("");
   const [draft, setDraft] = useState("");
   const [loadingThreads, setLoadingThreads] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -32,6 +31,18 @@ export default function MemberMessages() {
     () => threads.find((thread) => thread.thread_id === selectedThreadId) || null,
     [threads, selectedThreadId]
   );
+
+  const filteredThreads = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return threads;
+
+    return threads.filter((thread) => {
+      const participants = threadParticipantIds(thread);
+      const label = participants.map(participantLabel).join(" ").toLowerCase();
+      const preview = (thread.last_message_preview || "").toLowerCase();
+      return label.includes(query) || preview.includes(query);
+    });
+  }, [threads, searchQuery, threadProfiles]);
 
   const unreadCount = useMemo(
     () => threads.reduce((sum, thread) => sum + (thread.unread_count || 0), 0),
@@ -159,8 +170,10 @@ export default function MemberMessages() {
     const timer = window.setTimeout(async () => {
       try {
         setLoadingSearch(true);
-        const result = await searchMembers({ keyword: query }, 1, 6);
-        setSearchResults(result?.results || []);
+        const result = await searchMembers({ name: query }, 1, 6);
+        setSearchResults(
+          (result?.results || []).filter((member) => member.member_id !== memberId)
+        );
       } catch {
         setSearchResults([]);
       } finally {
@@ -171,21 +184,28 @@ export default function MemberMessages() {
     return () => window.clearTimeout(timer);
   }, [searchQuery]);
 
-  async function handleStartConversation(event) {
-    event.preventDefault();
-
-    if (!recipientId.trim()) return;
+  async function openConversationWithMember(targetMemberId) {
+    const trimmedId = targetMemberId?.trim();
+    if (!trimmedId || trimmedId === memberId) return;
 
     try {
       setError("");
-      const thread = await createThread([memberId, recipientId.trim()]);
-      await loadThreads();
-      setSelectedThreadId(thread.thread_id);
-      setRecipientId("");
+      const existingThread = threads.find((thread) =>
+        (thread.participant_ids || []).includes(trimmedId)
+      );
+
+      if (existingThread) {
+        setSelectedThreadId(existingThread.thread_id);
+      } else {
+        const thread = await createThread([memberId, trimmedId]);
+        await loadThreads();
+        setSelectedThreadId(thread.thread_id);
+      }
+
       setSearchQuery("");
       setSearchResults([]);
     } catch (err) {
-      setError(err?.message || "Failed to start conversation");
+      setError(err?.message || "Failed to open conversation");
     }
   }
 
@@ -267,7 +287,7 @@ export default function MemberMessages() {
     panel: {
       background: "#ffffff",
       border: "1px solid #e0dfdc",
-      borderRadius: "20px",
+      borderRadius: "16px",
       boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
       overflow: "hidden",
     },
@@ -284,6 +304,37 @@ export default function MemberMessages() {
       fontSize: "14px",
       color: "#5e6a75",
       lineHeight: 1.5,
+    },
+    searchBoxWrap: {
+      padding: "10px 12px",
+      background: "#fbfcfe",
+      borderBottom: "1px solid #eceae7",
+    },
+    searchInput: {
+      width: "100%",
+      borderRadius: "10px",
+      border: "1px solid #d7dee6",
+      padding: "10px 12px",
+      fontSize: "13px",
+      boxSizing: "border-box",
+      outline: "none",
+      fontFamily: "inherit",
+      background: "#fff",
+    },
+    searchResultsPane: {
+      maxHeight: "200px",
+      overflowY: "auto",
+      borderBottom: "1px solid #eceae7",
+      background: "#ffffff",
+    },
+    searchResultItem: {
+      width: "100%",
+      textAlign: "left",
+      border: "none",
+      borderBottom: "1px solid #f1efed",
+      background: "transparent",
+      padding: "12px 14px",
+      cursor: "pointer",
     },
     composer: {
       padding: "18px",
@@ -312,7 +363,7 @@ export default function MemberMessages() {
       cursor: "pointer",
     },
     threadList: {
-      maxHeight: "calc(100vh - 290px)",
+      maxHeight: "calc(100vh - 332px)",
       overflowY: "auto",
     },
     threadItem: {
@@ -474,63 +525,54 @@ export default function MemberMessages() {
         <div style={styles.grid}>
           <div style={styles.panel}>
             <div style={styles.panelHeader}>
-              <div style={styles.panelTitle}>New conversation</div>
+              <div style={styles.panelTitle}>Find people or conversations</div>
               <div style={styles.panelCopy}>
-                Search for a member or paste a profile ID to start a thread.
+                Search by name to start a new thread or filter your existing inbox.
               </div>
             </div>
 
-            <form style={styles.composer} onSubmit={handleStartConversation}>
-              <input
-                style={styles.field}
-                value={recipientId}
-                onChange={(event) => setRecipientId(event.target.value)}
-                placeholder="Recipient member ID"
-              />
+            <div style={styles.composer}>
               <input
                 style={styles.field}
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search members by name or keyword"
+                placeholder="Search members by name"
               />
 
-              <button style={styles.button} type="submit">
-                Start conversation
-              </button>
-
               {searchQuery.trim() && (
-                <div style={styles.searchResults}>
+                <div style={styles.searchResultsPane}>
                   {loadingSearch ? (
-                    <div style={styles.searchItem}>Searching…</div>
+                    <div style={styles.searchResultItem}>Searching…</div>
                   ) : searchResults.length ? (
                     searchResults.map((result) => (
-                      <div
+                      <button
                         key={result.member_id}
-                        style={styles.searchItem}
-                        onClick={() => setRecipientId(result.member_id)}
+                        type="button"
+                        style={styles.searchResultItem}
+                        onClick={() => openConversationWithMember(result.member_id)}
                       >
                         <div style={styles.searchName}>{result.full_name}</div>
                         <div style={styles.searchMeta}>
                           {result.headline || "No headline"} · {result.location || "No location"}
                         </div>
-                      </div>
+                      </button>
                     ))
                   ) : (
-                    <div style={styles.searchItem}>No matches found.</div>
+                    <div style={styles.searchResultItem}>No matches found.</div>
                   )}
                 </div>
               )}
-            </form>
+            </div>
 
             <div style={styles.threadList}>
               {loadingThreads ? (
                 <div style={styles.emptyState}>Loading conversations…</div>
-              ) : threads.length === 0 ? (
+              ) : filteredThreads.length === 0 ? (
                 <div style={styles.emptyState}>
-                  No conversations yet. Start a message using a member ID or search result.
+                  No conversations yet. Start a message by searching for a member.
                 </div>
               ) : (
-                threads.map((thread) => {
+                filteredThreads.map((thread) => {
                   const isActive = thread.thread_id === selectedThreadId;
 
                   return (

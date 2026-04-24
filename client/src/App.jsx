@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext.jsx";
+import MessagingWidget from "./components/MessagingWidget.jsx";
 
 
 const LoginSignupPage = lazy(() => import("./pages/LoginSignupPage.jsx"));
@@ -22,6 +23,7 @@ const JobDetails = lazy(() => import("./pages/JobDetails.jsx"));
 const SavedJobs = lazy(() => import("./pages/SavedJobs.jsx"));
 const MemberProfile = lazy(() => import("./pages/MemberProfile.jsx"));
 const MemberMessages = lazy(() => import("./pages/MemberMessages.jsx"));
+const MemberConnections = lazy(() => import("./pages/MemberConnections.jsx"));
 const RecruiterJobsDashboard = lazy(() => import("./pages/RecruiterJobsDashboard.jsx"));
 const CreateJob = lazy(() => import("./pages/CreateJob.jsx"));
 const EditJob = lazy(() => import("./pages/EditJob.jsx"));
@@ -59,6 +61,7 @@ export default function App() {
 
   return (
     <Suspense fallback={<PageLoader />}>
+      <>
       <Routes>
         <Route path="/" element={<LoginSignupPage />} />
 
@@ -243,6 +246,15 @@ export default function App() {
         />
 
         <Route
+          path="/member/connections"
+          element={
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+              <MemberConnections />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/recruiter/jobs"
           element={
             <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
@@ -300,6 +312,10 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      {isAuthenticated && user?.role === "member" && (
+        <MessagingWidget currentMemberId={user?.userId} />
+      )}
+      </>
     </Suspense>
   );
 }

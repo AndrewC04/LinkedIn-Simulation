@@ -9,7 +9,12 @@ import {
   uploadPhoto,
   uploadBanner,
 } from "../api/profileApi.js";
-import { getConnectionStatus, requestConnection } from "../api/connectionApi.js";
+import {
+  getConnectionCount,
+  getConnectionStatus,
+  removeConnection,
+  requestConnection,
+} from "../api/connectionApi.js";
 
 /* ─── Design tokens (match existing pages) ─────────────────────── */
 const C = {
@@ -160,9 +165,12 @@ export default function MemberProfile() {
   const [education, setEducation]   = useState([]);
   const [recommended, setRecommended] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState(null);
+  const [connectionCount, setConnectionCount] = useState(0);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(null);
   const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [showUnfollowConfirm, setShowUnfollowConfirm] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
 
   const [editing, setEditing]       = useState(false);
@@ -198,6 +206,7 @@ export default function MemberProfile() {
         if (cancelled) return;
 
         setProfile(p);
+        setConnectionCount(0);
         setDraft({
           email:    p.email    || "",
           headline: p.headline || "",
@@ -220,6 +229,17 @@ export default function MemberProfile() {
         if (searchRes.status === "fulfilled") {
           const all = searchRes.value.results || [];
           setRecommended(all.filter((m) => m.member_id !== viewingId).slice(0, 5));
+        }
+
+        try {
+          const countRes = await getConnectionCount(viewingId);
+          if (!cancelled) {
+            setConnectionCount(Number(countRes?.total_connections) || 0);
+          }
+        } catch {
+          if (!cancelled) {
+            setConnectionCount(Number(p?.connections) || 0);
+          }
         }
 
         if (!isOwnProfile) {
@@ -266,6 +286,27 @@ export default function MemberProfile() {
     } finally {
       setConnecting(false);
     }
+  }
+
+  async function handleUnfollow() {
+    if (!user?.userId || !connectionStatus?.connection_id) return;
+
+    setDisconnecting(true);
+    try {
+      await removeConnection(connectionStatus.connection_id, user.userId);
+      setConnectionStatus(null);
+      setConnectionCount((count) => Math.max(0, count - 1));
+      window.dispatchEvent(new Event("connections:updated"));
+    } catch (e) {
+      setSaveErr(e.message || "Failed to remove connection.");
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  async function confirmUnfollow() {
+    setShowUnfollowConfirm(false);
+    await handleUnfollow();
   }
 
   async function handleAddExperience() {
@@ -471,7 +512,7 @@ export default function MemberProfile() {
               {/* Stats row */}
               <div style={{ display: "flex", gap: "24px", marginTop: "20px", paddingTop: "16px", borderTop: `1px solid ${C.border}`, flexWrap: "wrap" }}>
                 <div>
-                  <div style={{ fontSize: "20px", fontWeight: 800, color: C.blue }}>{profile.connections ?? 0}</div>
+                  <div style={{ fontSize: "20px", fontWeight: 800, color: C.blue }}>{connectionCount}</div>
                   <div style={{ fontSize: "13px", color: C.muted }}>Connections</div>
                 </div>
               </div>
@@ -636,7 +677,7 @@ export default function MemberProfile() {
             <div style={{ fontWeight: 800, fontSize: "16px", color: C.text, marginBottom: "14px" }}>Profile Overview</div>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {[
-                ["Connections", profile.connections ?? 0],
+                ["Connections", connectionCount],
                 ["Skills listed", (profile.skills || []).length],
               ].map(([label, val]) => (
                 <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
@@ -654,7 +695,12 @@ export default function MemberProfile() {
                 <Btn
                   style={{ width: "100%", textAlign: "center" }}
                   onClick={handleConnect}
-                  disabled={connecting || connectionStatus?.status === "pending" || connectionStatus?.status === "accepted"}
+                  disabled={
+                    connecting ||
+                    disconnecting ||
+                    connectionStatus?.status === "pending" ||
+                    connectionStatus?.status === "accepted"
+                  }
                 >
                   {connectionStatus?.status === "accepted"
                     ? "Connected"
@@ -664,16 +710,41 @@ export default function MemberProfile() {
                         ? "Sending…"
                         : "Connect"}
                 </Btn>
-                <Btn variant="outline" style={{ width: "100%", textAlign: "center" }}>Message</Btn>
+                <Btn
+                  variant="outline"
+                  style={{ width: "100%", textAlign: "center" }}
+                  onClick={() => {
+                    window.dispatchEvent(
+                      new CustomEvent("messaging:open", {
+                        detail: {
+                          targetMemberId: viewingId,
+                          targetName: profile?.full_name || "Member",
+                        },
+                      })
+                    );
+                  }}
+                >
+                  Message
+                </Btn>
                 {connectionStatus?.status === "pending" && (
                   <div style={{ fontSize: "13px", color: C.muted, textAlign: "center" }}>
                     Connection request sent.
                   </div>
                 )}
                 {connectionStatus?.status === "accepted" && (
-                  <div style={{ fontSize: "13px", color: C.muted, textAlign: "center" }}>
-                    You are already connected.
-                  </div>
+                  <>
+                    <Btn
+                      variant="ghost"
+                      style={{ width: "100%", textAlign: "center" }}
+                      onClick={() => setShowUnfollowConfirm(true)}
+                      disabled={disconnecting}
+                    >
+                      {disconnecting ? "Removing..." : "Unfollow"}
+                    </Btn>
+                    <div style={{ fontSize: "13px", color: C.muted, textAlign: "center" }}>
+                      You are already connected.
+                    </div>
+                  </>
                 )}
               </div>
             </Card>
@@ -699,6 +770,43 @@ export default function MemberProfile() {
           </Card>
         </div>
       </div>
+
+      {showUnfollowConfirm && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+            padding: "16px",
+          }}
+        >
+          <Card style={{ width: "100%", maxWidth: "420px", padding: "22px" }}>
+            <div style={{ fontSize: "20px", fontWeight: 800, color: C.text, marginBottom: "8px" }}>
+              Confirm unfollow
+            </div>
+            <div style={{ fontSize: "14px", color: C.muted, lineHeight: 1.6, marginBottom: "18px" }}>
+              Are you sure you want to remove this connection?
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+              <Btn
+                variant="ghost"
+                onClick={() => setShowUnfollowConfirm(false)}
+                disabled={disconnecting}
+              >
+                Cancel
+              </Btn>
+              <Btn onClick={confirmUnfollow} disabled={disconnecting}>
+                {disconnecting ? "Removing..." : "Unfollow"}
+              </Btn>
+            </div>
+          </Card>
+        </div>
+      )}
+
     </div>
   );
 }
