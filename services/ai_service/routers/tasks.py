@@ -9,6 +9,9 @@ from models.schemas import (
 from db.mongo import create_task, get_task, update_task_status
 from datetime import datetime
 import uuid
+from agents.supervisor import run_supervisor
+from db.mongo import create_task, get_task, update_task_status, get_all_decisions
+from human_loop.approval import process_approval, get_approval_metrics
 
 router = APIRouter()
 
@@ -34,7 +37,7 @@ async def submit_task(request: AITaskRequest, background_tasks: BackgroundTasks)
     )
 
     # Kick off agent pipeline in background (supervisor will be wired in later)
-    background_tasks.add_task(run_pipeline_placeholder, task_id, trace_id)
+    background_tasks.add_task(run_supervisor, task_id, trace_id, request.job_id, request.candidate_ids)
 
     return AITaskResponse(
         task_id=task_id,
@@ -78,6 +81,16 @@ async def approve_task(request: ApprovalRequest):
         return process_approval(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# ── GET /ai/metrics ───────────────────────────────────────────────────────────
+
+@router.get("/metrics")
+async def get_metrics():
+    """
+    Returns HITL approval rate metrics across all completed AI tasks.
+    """
+    decisions = get_all_decisions()
+    return get_approval_metrics(decisions)
 
 
 # ── Background placeholder (supervisor will replace this) ─────────────────────

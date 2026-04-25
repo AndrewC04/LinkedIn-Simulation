@@ -98,3 +98,24 @@ def log_trace(trace_id: str, step: str, data: dict):
 
 def get_traces(trace_id: str):
     return list(traces_collection.find({"trace_id": trace_id}, {"_id": 0}))
+
+
+# ── Metrics Operations ────────────────────────────────────────────────────────
+
+
+def get_all_decisions() -> list[str]:
+    """Fetch all human decisions made on completed/rejected tasks."""
+    docs = tasks_collection.find(
+        {"status": {"$in": ["completed", "rejected"]}},
+        {"_id": 0, "steps_completed": 1}
+    )
+    decisions = []
+    for doc in docs:
+        steps = doc.get("steps_completed", [])
+        if "human_approved" in steps:
+            decisions.append("approved")
+        elif "human_edited" in steps:
+            decisions.append("edited")
+        elif "human_rejected" in steps:
+            decisions.append("rejected")
+    return decisions
