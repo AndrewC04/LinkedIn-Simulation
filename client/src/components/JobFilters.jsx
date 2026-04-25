@@ -39,7 +39,19 @@ export default function JobFilters({ filters, onChange, onSearch, onClear }) {
           <option value="Internship">Internship</option>
         </select>
 
-        <input name="industry" placeholder="Industry" value={filters.industry || ""} onChange={handleChange} />
+        <select name="industry" value={filters.industry} onChange={handleChange}>
+          <option value="">Industry</option>
+          <option value="Technology">Technology</option>
+          <option value="Finance">Finance</option>
+          <option value="Healthcare">Healthcare</option>
+          <option value="Education">Education</option>
+          <option value="Retail">Retail</option>
+          <option value="Manufacturing">Manufacturing</option>
+          <option value="Media">Media</option>
+          <option value="Consulting">Consulting</option>
+          <option value="Government">Government</option>
+          <option value="Other">Other</option>
+        </select>
 
         <select name="work_mode" value={filters.work_mode || ""} onChange={handleChange}>
           <option value="">Work Mode</option>

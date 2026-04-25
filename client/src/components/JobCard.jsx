@@ -1,5 +1,7 @@
 import React from "react";
 
+const COMPANY_NAMES_KEY = "companyNames";
+
 function formatSalary(salaryRange) {
   if (!salaryRange?.min && !salaryRange?.max) return "Salary not listed";
 
@@ -18,15 +20,28 @@ function formatSalary(salaryRange) {
   return `Up to ${fmt.format(salaryRange.max)}`;
 }
 
+function getCompanyDisplay(job) {
+  const companyNames = JSON.parse(localStorage.getItem(COMPANY_NAMES_KEY) || "{}");
+
+  return (
+    job.company_name ||
+    companyNames[job.job_id] ||
+    "Company not listed"
+  );
+}
+
 export default function JobCard({
   job,
   onView,
   onEdit,
   onClose,
   onToggleSave,
+  onApply,
   isSaved = false,
   showRecruiterActions = false,
 }) {
+  const companyDisplay = getCompanyDisplay(job);
+
   return (
     <div
       style={{
@@ -43,7 +58,7 @@ export default function JobCard({
           <h3 style={{ margin: 0, fontSize: "20px", color: "#1d2226" }}>{job.title}</h3>
 
           <div style={{ marginTop: "8px", color: "#5e6a75", fontSize: "14px" }}>
-            {(job.company_name || job.company_id) ?? "Unknown Company"} · {job.location}
+            {companyDisplay} · {job.location}
           </div>
 
           <div style={{ marginTop: "8px", fontSize: "14px", color: "#334155" }}>
@@ -82,9 +97,12 @@ export default function JobCard({
           <button onClick={() => onView?.(job.job_id)}>View Details</button>
 
           {!showRecruiterActions && (
-            <button onClick={() => onToggleSave?.(job)}>
-              {isSaved ? "Unsave Job" : "Save Job"}
-            </button>
+            <>
+              <button onClick={() => onApply?.(job.job_id)}>Apply</button>
+              <button onClick={() => onToggleSave?.(job)}>
+                {isSaved ? "Unsave Job" : "Save Job"}
+              </button>
+            </>
           )}
 
           {showRecruiterActions && (

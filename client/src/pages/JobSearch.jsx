@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import JobCard from "../components/JobCard.jsx";
 import JobFilters from "../components/JobFilters.jsx";
 import { searchJobs } from "../api/jobApi.js";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthContext.jsx"; // 🔥 ADD THIS
+import { useAuth } from "../auth/AuthContext.jsx";
 
 const SAVED_JOBS_KEY = "savedJobs";
 
 export default function JobSearch() {
-  const navigate = useNavigate(); // ✅ MOVE HERE
-  const { user } = useAuth();     // 🔥 YOU WERE MISSING THIS
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [filters, setFilters] = useState({
     keyword: "",
@@ -72,6 +72,10 @@ export default function JobSearch() {
     localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(next));
   }
 
+  function handleApply(jobId) {
+    navigate(`/member/jobs/${jobId}/apply`);
+  }
+
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f3f2ef", fontFamily: "Arial, Helvetica, sans-serif" }}>
       <LinkedInNav userType="member" />
@@ -85,12 +89,23 @@ export default function JobSearch() {
             padding: "26px 28px",
             boxShadow: "0 1px 2px rgba(0,0,0,0.07)",
             marginBottom: "22px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "16px",
+            flexWrap: "wrap",
           }}
         >
-          <h1 style={{ margin: 0, fontSize: "30px", fontWeight: 700 }}>Job Search</h1>
-          <p style={{ marginTop: "8px", fontSize: "14px", color: "#5e6a75" }}>
-            Search and browse open positions.
-          </p>
+          <div>
+            <h1 style={{ margin: 0, fontSize: "30px", fontWeight: 700 }}>Job Search</h1>
+            <p style={{ marginTop: "8px", fontSize: "14px", color: "#5e6a75" }}>
+              Search and browse open positions.
+            </p>
+          </div>
+
+          <Link to="/member/jobs/saved">
+            <button>Saved Jobs</button>
+          </Link>
         </div>
 
         <JobFilters
@@ -116,12 +131,10 @@ export default function JobSearch() {
               key={job.job_id}
               job={job}
               onView={(jobId) => {
-                if (user?.role === "member") {
-                  navigate(`/member/jobs/${jobId}`);
-                } else {
-                  navigate(`/recruiter/jobs/${jobId}`);
-                }
+                if (user?.role === "member") navigate(`/member/jobs/${jobId}`);
+                else navigate(`/recruiter/jobs/${jobId}`);
               }}
+              onApply={handleApply}
               onToggleSave={toggleSave}
               isSaved={savedJobs.some((j) => j.job_id === job.job_id)}
             />

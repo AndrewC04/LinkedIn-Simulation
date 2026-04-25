@@ -4,6 +4,25 @@ import LinkedInNav from "../components/LinkedInNav.jsx";
 import JobForm from "../components/JobForm.jsx";
 import { getJob, updateJob } from "../api/jobApi.js";
 
+const COMPANY_NAMES_KEY = "companyNames";
+
+function getCompanyName(jobId) {
+  const companyNames = JSON.parse(localStorage.getItem(COMPANY_NAMES_KEY) || "{}");
+  return companyNames[jobId] || "";
+}
+
+function saveCompanyName(jobId, companyName) {
+  const current = JSON.parse(localStorage.getItem(COMPANY_NAMES_KEY) || "{}");
+
+  localStorage.setItem(
+    COMPANY_NAMES_KEY,
+    JSON.stringify({
+      ...current,
+      [jobId]: companyName,
+    })
+  );
+}
+
 export default function EditJob() {
   const { jobId } = useParams();
   const navigate = useNavigate();
@@ -21,8 +40,13 @@ export default function EditJob() {
     try {
       setPageLoading(true);
       setError("");
+
       const data = await getJob(jobId, "mem_0001");
-      setJob(data);
+
+      setJob({
+        ...data,
+        company_name: data.company_name || getCompanyName(data.job_id || jobId),
+      });
     } catch (err) {
       setError(err?.message || "Failed to load job");
     } finally {
@@ -34,6 +58,12 @@ export default function EditJob() {
     try {
       setLoading(true);
       setError("");
+
+      const companyName = payload.company_name?.trim();
+
+      if (companyName) {
+        saveCompanyName(jobId, companyName);
+      }
 
       const fields = {
         title: payload.title,
@@ -59,18 +89,28 @@ export default function EditJob() {
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f3f2ef", fontFamily: "Arial, Helvetica, sans-serif" }}>
       <LinkedInNav userType="recruiter" />
+
       <div style={{ maxWidth: "1128px", margin: "0 auto", padding: "24px 16px 40px" }}>
-        <div style={{ marginBottom: "16px" }}><Link to="/recruiter/jobs">Back</Link></div>
+        <div style={{ marginBottom: "16px" }}>
+          <Link to="/recruiter/jobs">Back</Link>
+        </div>
+
         <h1>Edit Job</h1>
+
         {error && <div style={{ color: "crimson", marginBottom: "12px" }}>{error}</div>}
-        {pageLoading ? <div>Loading job...</div> : job && (
-          <JobForm
-            initialValues={job}
-            onSubmit={handleSubmit}
-            submitLabel="Update Job"
-            includeOwnerFields={false}
-            loading={loading}
-          />
+
+        {pageLoading ? (
+          <div>Loading job...</div>
+        ) : (
+          job && (
+            <JobForm
+              initialValues={job}
+              onSubmit={handleSubmit}
+              submitLabel="Update Job"
+              includeOwnerFields={false}
+              loading={loading}
+            />
+          )
         )}
       </div>
     </div>
