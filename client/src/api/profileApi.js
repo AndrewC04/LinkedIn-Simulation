@@ -1,5 +1,5 @@
 const PROFILE_API = "http://localhost:8001";
-const AUTH_API = "http://localhost:8003";
+const AUTH_API = "http://localhost:8001";
 
 async function postJson(url, body) {
   const res = await fetch(url, {

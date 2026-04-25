@@ -3,14 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import JobForm from "../components/JobForm.jsx";
 import { createJob } from "../api/jobApi.js";
-
-const DEMO_RECRUITER_ID = "000a9569-fb9d-4505-a550-8641196bdd49";
-const DEMO_COMPANY_ID = "04f8fe99-fcba-430a-ba37-cd64f3fd49f3";
+import { useAuth } from "../auth/AuthContext.jsx";
 
 const COMPANY_NAMES_KEY = "companyNames";
 
 export default function CreateJob() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -35,8 +34,8 @@ export default function CreateJob() {
   
       const finalPayload = {
         ...payload,
-        recruiter_id: payload.recruiter_id || DEMO_RECRUITER_ID,
-        company_id: payload.company_id || DEMO_COMPANY_ID,
+        recruiter_id: user?.userId,
+        company_id: user?.companyId || payload.company_id,
       };
   
       delete finalPayload.company_name;
@@ -75,9 +74,9 @@ export default function CreateJob() {
 
         <JobForm
           initialValues={{
-            recruiter_id: DEMO_RECRUITER_ID,
-            company_id: DEMO_COMPANY_ID,
-            company_name: "",
+            recruiter_id: user?.userId || "",
+            company_id: user?.companyId || "",
+            company_name: user?.companyName || "",
           }}
           onSubmit={handleSubmit}
           submitLabel="Create Job"

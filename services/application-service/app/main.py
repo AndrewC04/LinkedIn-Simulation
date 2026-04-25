@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.routers.applications import router as applications_router
-from app.routers.auth import router as auth_router
 import os
 
 app = FastAPI(title=settings.app_name)
@@ -21,7 +20,6 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
-app.include_router(auth_router)
 app.include_router(applications_router)
 
 

@@ -2,23 +2,25 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 
 const AuthContext = createContext(null);
 const SESSION_KEY = "linkedin_sim_auth_session";
-const API = "http://localhost:8003";
+const API = "http://localhost:8001";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const raw = localStorage.getItem(SESSION_KEY);
-    if (!raw) return;
-
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed?.role && parsed?.email) {
-        setUser(parsed);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed?.role && parsed?.email) {
+          setUser(parsed);
+        }
+      } catch {
+        localStorage.removeItem(SESSION_KEY);
       }
-    } catch {
-      localStorage.removeItem(SESSION_KEY);
     }
+    setLoading(false);
   }, []);
 
   function extractErrorMessage(data, fallback) {
@@ -64,6 +66,7 @@ export function AuthProvider({ children }) {
       lastName: data.last_name,
       displayName: `${data.first_name} ${data.last_name}`.trim(),
       companyName: data.company_name || null,
+      companyId: data.company_id || null,
       token: data.access_token,
     };
 
@@ -113,6 +116,7 @@ export function AuthProvider({ children }) {
       lastName: data.last_name,
       displayName: `${data.first_name} ${data.last_name}`.trim(),
       companyName: data.company_name || null,
+      companyId: data.company_id || null,
       token: data.access_token,
     };
 
@@ -129,11 +133,12 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       isAuthenticated: !!user,
+      loading,
       login,
       signup,
       logout,
     }),
-    [user]
+    [user, loading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

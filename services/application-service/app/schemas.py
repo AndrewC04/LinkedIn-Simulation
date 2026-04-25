@@ -33,6 +33,7 @@ class NoteResponse(BaseModel):
     note_id: str
     application_id: str
     recruiter_id: str
+    recruiter_name: str | None = None
     note: str | None
     created_at: datetime
 

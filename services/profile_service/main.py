@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import os
 
-from services.profile_service.routers import profiles
+from services.profile_service.routers import profiles, auth
 from services.profile_service.kafka.producer import init_producer
 
 # Global Kafka producer
@@ -57,6 +57,7 @@ app.mount("/uploads", StaticFiles(directory="/app/uploads"), name="uploads")
 
 # Routes
 app.include_router(profiles.router)
+app.include_router(auth.router)
 
 
 @app.get("/health")

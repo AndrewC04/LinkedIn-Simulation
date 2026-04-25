@@ -64,7 +64,11 @@ export default function SubmitApplication() {
       setMessage("Application submitted successfully!");
 
       setTimeout(() => {
-        navigate("/member/applications/view");
+        if (data?.application_id) {
+          navigate(`/member/applications/details/${data.application_id}`);
+        } else {
+          navigate("/member/applications/view");
+        }
       }, 1500);
 
     } catch (err) {

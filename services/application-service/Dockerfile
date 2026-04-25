@@ -8,7 +8,10 @@ WORKDIR /app
 COPY services/application-service/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
+COPY shared /app/shared
 COPY services/application-service /app/services/application-service
+
+ENV PYTHONPATH=/app
 
 WORKDIR /app/services/application-service
 

@@ -33,5 +33,6 @@ class AuthResponse(BaseModel):
     first_name: str
     last_name: str
     company_name: str | None = None
+    company_id: str | None = None
     access_token: str
     token_type: str = "bearer"

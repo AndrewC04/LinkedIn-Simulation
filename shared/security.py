@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
@@ -6,7 +7,7 @@ from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
-SECRET_KEY = "change-this-in-env"
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-this-in-env")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 

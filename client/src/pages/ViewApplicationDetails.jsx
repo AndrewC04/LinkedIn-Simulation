@@ -351,7 +351,7 @@ export default function ViewApplicationDetails() {
                     <div key={note.note_id} style={styles.noteCard}>
                       <p style={styles.noteText}>{note.note}</p>
                       <div style={styles.noteMeta}>
-                        {note.recruiter_id} •{" "}
+                        {note.recruiter_name || note.recruiter_id} •{" "}
                         {new Date(note.created_at).toLocaleString()}
                       </div>
                     </div>

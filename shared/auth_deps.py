@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 
-from app.security import decode_access_token
+from shared.security import decode_access_token
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
