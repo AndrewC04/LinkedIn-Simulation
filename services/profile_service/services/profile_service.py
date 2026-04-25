@@ -256,7 +256,7 @@ class ProfileService:
             # Get paginated results
             query = f"""
                 SELECT member_id, first_name, last_name, headline,
-                       location_city, location_state, skills
+                       location_city, location_state, skills, profile_photo_url
                 FROM members
                 WHERE {where_sql}
                 LIMIT :limit OFFSET :offset
@@ -276,7 +276,8 @@ class ProfileService:
                     headline=row[3] or "",
                     location=location,
                     skills=json.loads(row[6]) if row[6] else None,
-                    match_score=0.95  # Placeholder for relevance scoring
+                    match_score=0.95,
+                    profile_photo_url=row[7],
                 )
             )
 

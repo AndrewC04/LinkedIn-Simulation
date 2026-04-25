@@ -1,4 +1,5 @@
 const PROFILE_API = "http://localhost:8001";
+const AUTH_API = "http://localhost:8003";
 
 async function postJson(url, body) {
   const res = await fetch(url, {
@@ -78,3 +79,12 @@ export function addEducation(data) {
 export function deleteEducation(educationId) {
   return postJson(`${PROFILE_API}/members/education/delete`, { education_id: educationId });
 }
+
+export function getRecruiterProfile(recruiterId) {
+  return postJson(`${AUTH_API}/auth/recruiters/get`, { recruiter_id: recruiterId });
+}
+
+export function searchRecruiters(name = "", limit = 8) {
+  return postJson(`${AUTH_API}/auth/recruiters/search`, { name, limit });
+}
+

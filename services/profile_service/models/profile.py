@@ -43,6 +43,7 @@ class MemberSearchResult(BaseModel):
     location: str
     skills: Optional[List[str]] = None
     match_score: Optional[float] = None
+    profile_photo_url: Optional[str] = None
 
 
 class MemberGetResponse(BaseModel):

@@ -1,10 +1,13 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { brand } from "../styles/theme.js";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import LeftProfileRail from "../components/LeftProfileRail.jsx";
 import FeatureCard from "../components/FeatureCard.jsx";
 
 export default function RecruiterHome({ onNavigate }) {
+  const navigate = useNavigate();
+
   const styles = {
     page: {
       minHeight: "100vh",
@@ -83,6 +86,32 @@ export default function RecruiterHome({ onNavigate }) {
       padding: "12px 18px",
       fontWeight: 800,
       cursor: "pointer",
+    },
+    secondaryBtn: {
+      backgroundColor: "white",
+      color: brand.text,
+      border: `1px solid ${brand.border}`,
+      borderRadius: "999px",
+      padding: "12px 16px",
+      fontWeight: 700,
+      cursor: "pointer",
+      fontSize: "14px",
+    },
+    aiBtn: {
+      backgroundColor: "#eff6ff",
+      color: brand.blue,
+      border: `1px solid #bfdbfe`,
+      borderRadius: "999px",
+      padding: "12px 16px",
+      fontWeight: 700,
+      cursor: "pointer",
+      fontSize: "14px",
+    },
+    actionsGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(3, 1fr)",
+      gap: "12px",
+      marginTop: "16px",
     },
     postHeader: {
       display: "flex",
@@ -168,7 +197,26 @@ export default function RecruiterHome({ onNavigate }) {
       <LinkedInNav userType="recruiter" />
 
       <div style={styles.layout}>
-        <LeftProfileRail role="recruiter" />
+        <div style={{ position: "sticky", top: "80px", alignSelf: "start", display: "flex", flexDirection: "column", gap: "16px" }}>
+          <LeftProfileRail role="recruiter" />
+          <div style={styles.card}>
+            <div style={styles.sectionTitle}>AI Tools</div>
+            <div style={{ ...styles.actionsGrid, gridTemplateColumns: "1fr" }}>
+              <button
+                style={styles.aiBtn}
+                onClick={() => navigate("/recruiter/ai-request")}
+              >
+                🤖 AI Hiring Assistant
+              </button>
+              <button
+                style={styles.aiBtn}
+                onClick={() => navigate("/recruiter/ai-review")}
+              >
+                📋 AI Review Center
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div style={styles.centerCol}>
           <div style={styles.card}>
@@ -176,12 +224,10 @@ export default function RecruiterHome({ onNavigate }) {
             <div style={styles.subtitle}>
               Share an update with your hiring network.
             </div>
-
             <textarea
               style={styles.postInput}
               placeholder="Share a hiring update, role opening, or recruiting tip..."
             />
-
             <div style={styles.postButtonRow}>
               <button style={styles.primaryBtn}>Post</button>
             </div>
@@ -195,13 +241,91 @@ export default function RecruiterHome({ onNavigate }) {
                 <div style={styles.postMeta}>Hiring Team • 3h ago</div>
               </div>
             </div>
-
             <div style={styles.postText}>
               We are actively reviewing applications for backend, frontend, and full-stack
               roles this week. Candidates with polished resumes, strong project work, and
               clear communication are standing out early in the process.
             </div>
+            <div style={styles.postActions}>
+              <button style={styles.actionBtn}>Like</button>
+              <button style={styles.actionBtn}>Comment</button>
+              <button style={styles.actionBtn}>Repost</button>
+            </div>
+          </div>
 
+          <div style={styles.card}>
+            <div style={styles.postHeader}>
+              <div style={styles.avatar}>JW</div>
+              <div>
+                <div style={styles.postName}>Jess Wu</div>
+                <div style={styles.postMeta}>Technical Recruiter • 6h ago</div>
+              </div>
+            </div>
+            <div style={styles.postText}>
+              Reminder to all candidates: a personalized cover letter still makes a real difference.
+              We read them. When someone explains exactly why they want this specific role at this
+              specific company, it moves them up the list every time.
+            </div>
+            <div style={styles.postActions}>
+              <button style={styles.actionBtn}>Like</button>
+              <button style={styles.actionBtn}>Comment</button>
+              <button style={styles.actionBtn}>Repost</button>
+            </div>
+          </div>
+
+          <div style={styles.card}>
+            <div style={styles.postHeader}>
+              <div style={styles.avatar}>MB</div>
+              <div>
+                <div style={styles.postName}>Marcus Bell</div>
+                <div style={styles.postMeta}>Head of Talent • 1d ago</div>
+              </div>
+            </div>
+            <div style={styles.postText}>
+              We just opened three new engineering roles across backend and platform infrastructure.
+              If you have experience with distributed systems or cloud-native tooling, I would love
+              to connect. DMs are open.
+            </div>
+            <div style={styles.postActions}>
+              <button style={styles.actionBtn}>Like</button>
+              <button style={styles.actionBtn}>Comment</button>
+              <button style={styles.actionBtn}>Repost</button>
+            </div>
+          </div>
+
+          <div style={styles.card}>
+            <div style={styles.postHeader}>
+              <div style={styles.avatar}>NR</div>
+              <div>
+                <div style={styles.postName}>Nina Rao</div>
+                <div style={styles.postMeta}>Campus Recruiter • 2d ago</div>
+              </div>
+            </div>
+            <div style={styles.postText}>
+              Wrapping up our spring internship cycle. The quality of applicants this year was
+              genuinely impressive. A few things that stood out: clear GitHub projects, concise
+              resumes, and candidates who could explain their trade-offs in technical screens.
+            </div>
+            <div style={styles.postActions}>
+              <button style={styles.actionBtn}>Like</button>
+              <button style={styles.actionBtn}>Comment</button>
+              <button style={styles.actionBtn}>Repost</button>
+            </div>
+          </div>
+
+          <div style={styles.card}>
+            <div style={styles.postHeader}>
+              <div style={styles.avatar}>TH</div>
+              <div>
+                <div style={styles.postName}>Tom Haines</div>
+                <div style={styles.postMeta}>Recruiting Lead • 3d ago</div>
+              </div>
+            </div>
+            <div style={styles.postText}>
+              Feedback loops matter. If a candidate takes time to interview with your team,
+              they deserve a clear and timely response. Ghosting damages your employer brand
+              more than most companies realize. Let us do better.
+            </div>
             <div style={styles.postActions}>
               <button style={styles.actionBtn}>Like</button>
               <button style={styles.actionBtn}>Comment</button>
@@ -210,43 +334,45 @@ export default function RecruiterHome({ onNavigate }) {
           </div>
         </div>
 
-        <div style={styles.card}>
-          <div style={styles.rightCardTitle}>LinkedIn News</div>
+        <div style={{ position: "sticky", top: "80px", alignSelf: "start" }}>
+          <div style={styles.card}>
+            <div style={styles.rightCardTitle}>LinkedIn News</div>
 
-          <div style={styles.newsList}>
-            <div style={styles.newsItem}>
-              <div style={styles.newsHeadline}>
-                Recruiters are prioritizing candidates with project-based experience
+            <div style={styles.newsList}>
+              <div style={styles.newsItem}>
+                <div style={styles.newsHeadline}>
+                  Recruiters are prioritizing candidates with project-based experience
+                </div>
+                <div style={styles.newsMeta}>Top story • 1d ago</div>
               </div>
-              <div style={styles.newsMeta}>Top story • 1d ago</div>
-            </div>
 
-            <div style={styles.newsItem}>
-              <div style={styles.newsHeadline}>
-                Hiring teams continue to balance speed with candidate experience
+              <div style={styles.newsItem}>
+                <div style={styles.newsHeadline}>
+                  Hiring teams continue to balance speed with candidate experience
+                </div>
+                <div style={styles.newsMeta}>Hiring trends • 2d ago</div>
               </div>
-              <div style={styles.newsMeta}>Hiring trends • 2d ago</div>
-            </div>
 
-            <div style={styles.newsItem}>
-              <div style={styles.newsHeadline}>
-                Internship and new grad pipelines remain competitive in tech
+              <div style={styles.newsItem}>
+                <div style={styles.newsHeadline}>
+                  Internship and new grad pipelines remain competitive in tech
+                </div>
+                <div style={styles.newsMeta}>Campus recruiting • 3d ago</div>
               </div>
-              <div style={styles.newsMeta}>Campus recruiting • 3d ago</div>
-            </div>
 
-            <div style={styles.newsItem}>
-              <div style={styles.newsHeadline}>
-                More employers are asking recruiters to improve feedback turnaround time
+              <div style={styles.newsItem}>
+                <div style={styles.newsHeadline}>
+                  More employers are asking recruiters to improve feedback turnaround time
+                </div>
+                <div style={styles.newsMeta}>Workplace news • 4d ago</div>
               </div>
-              <div style={styles.newsMeta}>Workplace news • 4d ago</div>
-            </div>
 
-            <div style={{ ...styles.newsItem, borderBottom: "none", paddingBottom: 0 }}>
-              <div style={styles.newsHeadline}>
-                Application review workflows are becoming more data-driven
+              <div style={{ ...styles.newsItem, borderBottom: "none", paddingBottom: 0 }}>
+                <div style={styles.newsHeadline}>
+                  Application review workflows are becoming more data-driven
+                </div>
+                <div style={styles.newsMeta}>Industry update • 5d ago</div>
               </div>
-              <div style={styles.newsMeta}>Industry update • 5d ago</div>
             </div>
           </div>
         </div>

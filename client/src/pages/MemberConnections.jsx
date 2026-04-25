@@ -364,10 +364,10 @@ export default function MemberConnections() {
 
   return (
     <div style={styles.page}>
-      <LinkedInNav userType="member" />
+      <LinkedInNav />
 
       <div style={styles.layout}>
-        <LeftProfileRail role="member" />
+        <LeftProfileRail role={user?.role || "member"} />
 
         <main style={styles.main}>
           <section style={styles.card}>

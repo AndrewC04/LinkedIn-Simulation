@@ -163,7 +163,7 @@ def login_user(db: Session, *, email: str, password: str, role: str) -> dict:
         row = db.execute(
             text(
                 """
-                SELECT recruiter_id, first_name, last_name, email, password_hash
+                SELECT recruiter_id, first_name, last_name, email, company_name, password_hash
                 FROM recruiters
                 WHERE email = :email
                 """
@@ -171,7 +171,7 @@ def login_user(db: Session, *, email: str, password: str, role: str) -> dict:
             {"email": email},
         ).fetchone()
 
-        if row is None or not row[4] or not verify_password(password, row[4]):
+        if row is None or not row[5] or not verify_password(password, row[5]):
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
         access_token = create_access_token(
@@ -183,9 +183,63 @@ def login_user(db: Session, *, email: str, password: str, role: str) -> dict:
             "first_name": row[1],
             "last_name": row[2],
             "email": row[3],
+            "company_name": row[4],
             "role": "recruiter",
             "access_token": access_token,
             "token_type": "bearer",
         }
 
     raise HTTPException(status_code=400, detail="Role must be member or recruiter")
+
+
+def get_recruiter(db: Session, *, recruiter_id: str) -> dict | None:
+    row = db.execute(
+        text(
+            """
+            SELECT recruiter_id, first_name, last_name, email, company_name
+            FROM recruiters
+            WHERE recruiter_id = :recruiter_id
+            """
+        ),
+        {"recruiter_id": recruiter_id},
+    ).fetchone()
+
+    if not row:
+        return None
+
+    return {
+        "recruiter_id": row[0],
+        "first_name": row[1],
+        "last_name": row[2],
+        "full_name": f"{row[1]} {row[2]}".strip(),
+        "email": row[3],
+        "company_name": row[4],
+    }
+
+
+def search_recruiters(db: Session, *, name: str = "", limit: int = 8) -> list:
+    rows = db.execute(
+        text(
+            """
+            SELECT recruiter_id, first_name, last_name, email, company_name
+            FROM recruiters
+            WHERE LOWER(CONCAT(first_name, ' ', last_name)) LIKE :q
+               OR LOWER(company_name) LIKE :q
+            ORDER BY first_name
+            LIMIT :limit
+            """
+        ),
+        {"q": f"%{name.strip().lower()}%", "limit": limit},
+    ).fetchall()
+
+    return [
+        {
+            "recruiter_id": r[0],
+            "first_name": r[1],
+            "last_name": r[2],
+            "full_name": f"{r[1]} {r[2]}".strip(),
+            "email": r[3],
+            "company_name": r[4],
+        }
+        for r in rows
+    ]

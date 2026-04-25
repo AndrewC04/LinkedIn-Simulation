@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { brand } from "../styles/theme.js";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import LeftProfileRail from "../components/LeftProfileRail.jsx";
-import RightNewsRail from "../components/RightNewsRail.jsx";
 
 const TASK_TYPES = ["shortlist", "outreach_draft", "match_score"];
 
@@ -17,6 +17,7 @@ const taskColors = {
 };
 
 export default function AIReview({ onNavigate }) {
+  const navigate = useNavigate();
   const [tasks, setTasks]             = useState([]);
   const [loading, setLoading]         = useState(false);
   const [message, setMessage]         = useState(null);
@@ -29,7 +30,7 @@ export default function AIReview({ onNavigate }) {
   const s = {
     page:        { minHeight: "100vh", backgroundColor: brand.bg, fontFamily: "Arial, Helvetica, sans-serif" },
     layout:      { maxWidth: "1150px", margin: "0 auto", padding: "24px 16px",
-                   display: "grid", gridTemplateColumns: "260px 1fr 280px", gap: "20px" },
+                   display: "grid", gridTemplateColumns: "260px 1fr", gap: "20px" },
     centerCol:   { display: "flex", flexDirection: "column", gap: "16px" },
     card:        { backgroundColor: "white", border: `1px solid ${brand.border}`,
                    borderRadius: "12px", padding: "20px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" },
@@ -71,13 +72,13 @@ export default function AIReview({ onNavigate }) {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:8005/ai/tasks", {
+        const res = await fetch("http://localhost:8006/ai/status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ recruiter_id })
         });
         const data = await res.json();
-        setTasks(data.tasks || data);
+        setTasks(data.tasks || (Array.isArray(data) ? data : []));
       } catch {
         // Show mock data if AI service isn't running yet
         setTasks([
@@ -115,10 +116,10 @@ export default function AIReview({ onNavigate }) {
 
   const handleApprove = async (task_id) => {
     try {
-      await fetch("http://localhost:8005/ai/approve", {
+      await fetch("http://localhost:8006/ai/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task_id, recruiter_id })
+        body: JSON.stringify({ task_id, recruiter_id, action: "approve" })
       });
     } catch { /* offline — update UI anyway */ }
     setTasks(tasks.map(t => t.task_id === task_id ? { ...t, status: "approved" } : t));
@@ -127,10 +128,10 @@ export default function AIReview({ onNavigate }) {
 
   const handleReject = async (task_id) => {
     try {
-      await fetch("http://localhost:8005/ai/reject", {
+      await fetch("http://localhost:8006/ai/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task_id, recruiter_id })
+        body: JSON.stringify({ task_id, recruiter_id, action: "reject" })
       });
     } catch { /* offline — update UI anyway */ }
     setTasks(tasks.map(t => t.task_id === task_id ? { ...t, status: "rejected" } : t));
@@ -139,10 +140,10 @@ export default function AIReview({ onNavigate }) {
 
   const handleEditSave = async (task_id) => {
     try {
-      await fetch("http://localhost:8005/ai/edit", {
+      await fetch("http://localhost:8006/ai/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task_id, recruiter_id, edited_output: editContent })
+        body: JSON.stringify({ task_id, recruiter_id, action: "edit", edited_output: editContent })
       });
     } catch { /* offline — update UI anyway */ }
     setTasks(tasks.map(t =>
@@ -190,7 +191,7 @@ export default function AIReview({ onNavigate }) {
                     {pendingCount} pending review
                   </span>
                 )}
-                <button style={s.secondaryBtn} onClick={() => onNavigate("recruiterHome")}>← Back</button>
+                <button style={s.secondaryBtn} onClick={() => navigate("/recruiter/home")}>← Back</button>
               </div>
             </div>
 
@@ -303,7 +304,6 @@ export default function AIReview({ onNavigate }) {
           ))}
         </div>
 
-        <RightNewsRail role="recruiter" />
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.auth_crud import create_member_account, create_recruiter_account, login_user
+from app.auth_crud import create_member_account, create_recruiter_account, login_user, get_recruiter, search_recruiters
 from app.auth_schemas import (
     AuthResponse,
     LoginRequest,
@@ -47,3 +48,26 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         role=payload.role,
     )
     return AuthResponse(**user)
+
+
+class RecruiterGetRequest(BaseModel):
+    recruiter_id: str
+
+
+class RecruiterSearchRequest(BaseModel):
+    name: str = ""
+    limit: int = 8
+
+
+@router.post("/recruiters/get")
+def get_recruiter_route(payload: RecruiterGetRequest, db: Session = Depends(get_db)):
+    recruiter = get_recruiter(db, recruiter_id=payload.recruiter_id)
+    if not recruiter:
+        raise HTTPException(status_code=404, detail="Recruiter not found")
+    return recruiter
+
+
+@router.post("/recruiters/search")
+def search_recruiters_route(payload: RecruiterSearchRequest, db: Session = Depends(get_db)):
+    results = search_recruiters(db, name=payload.name, limit=payload.limit)
+    return {"results": results}

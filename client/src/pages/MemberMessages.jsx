@@ -503,7 +503,7 @@ export default function MemberMessages() {
 
   return (
     <div style={styles.page}>
-      <LinkedInNav userType="member" />
+      <LinkedInNav />
 
       <div style={styles.shell}>
         <div style={styles.hero}>

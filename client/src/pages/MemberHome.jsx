@@ -173,7 +173,9 @@ export default function MemberHome({ onNavigate }) {
       <LinkedInNav userType="member" onNavigate={onNavigate} />
 
       <div style={styles.layout}>
-        <LeftProfileRail role="member" />
+        <div style={{ position: "sticky", top: "80px", alignSelf: "start" }}>
+          <LeftProfileRail role="member" />
+        </div>
 
         <div style={styles.centerCol}>
           <div style={styles.card}>
@@ -202,12 +204,90 @@ export default function MemberHome({ onNavigate }) {
                 <div style={styles.postMeta}>Software Engineer • 2h ago</div>
               </div>
             </div>
-
             <div style={styles.postText}>
               Excited to keep building projects and applying what I have learned in full-stack development.
               Recently worked on improving my job application tracker and polishing the UI to make it feel more like a real platform.
             </div>
+            <div style={styles.postActions}>
+              <button style={styles.actionBtn}>Like</button>
+              <button style={styles.actionBtn}>Comment</button>
+              <button style={styles.actionBtn}>Repost</button>
+            </div>
+          </div>
 
+          <div style={styles.card}>
+            <div style={styles.postHeader}>
+              <div style={styles.avatar}>AM</div>
+              <div>
+                <div style={styles.postName}>Anika Mehta</div>
+                <div style={styles.postMeta}>Data Analyst • 5h ago</div>
+              </div>
+            </div>
+            <div style={styles.postText}>
+              Just completed my SQL and data visualization course. It is amazing how much clearer
+              dashboards become when you think carefully about what story the data is actually telling.
+              Excited to apply this in my next role.
+            </div>
+            <div style={styles.postActions}>
+              <button style={styles.actionBtn}>Like</button>
+              <button style={styles.actionBtn}>Comment</button>
+              <button style={styles.actionBtn}>Repost</button>
+            </div>
+          </div>
+
+          <div style={styles.card}>
+            <div style={styles.postHeader}>
+              <div style={styles.avatar}>KP</div>
+              <div>
+                <div style={styles.postName}>Karan Patel</div>
+                <div style={styles.postMeta}>Frontend Developer • 1d ago</div>
+              </div>
+            </div>
+            <div style={styles.postText}>
+              Shipped my personal portfolio site today. Built with React, deployed on Vercel.
+              It took about three weeks of evenings but I am really proud of how the animations turned out.
+              Always good to have a place that is fully yours.
+            </div>
+            <div style={styles.postActions}>
+              <button style={styles.actionBtn}>Like</button>
+              <button style={styles.actionBtn}>Comment</button>
+              <button style={styles.actionBtn}>Repost</button>
+            </div>
+          </div>
+
+          <div style={styles.card}>
+            <div style={styles.postHeader}>
+              <div style={styles.avatar}>SL</div>
+              <div>
+                <div style={styles.postName}>Sara Liu</div>
+                <div style={styles.postMeta}>ML Engineer • 2d ago</div>
+              </div>
+            </div>
+            <div style={styles.postText}>
+              Hot take: the most underrated skill for any engineer is knowing how to write a clear one-pager.
+              You can build the best model in the world but if you cannot explain why it matters,
+              it will not make it past the first stakeholder meeting.
+            </div>
+            <div style={styles.postActions}>
+              <button style={styles.actionBtn}>Like</button>
+              <button style={styles.actionBtn}>Comment</button>
+              <button style={styles.actionBtn}>Repost</button>
+            </div>
+          </div>
+
+          <div style={styles.card}>
+            <div style={styles.postHeader}>
+              <div style={styles.avatar}>DT</div>
+              <div>
+                <div style={styles.postName}>Dev Tran</div>
+                <div style={styles.postMeta}>Backend Engineer • 3d ago</div>
+              </div>
+            </div>
+            <div style={styles.postText}>
+              Grateful to share that I accepted an offer for a backend role at a fintech startup.
+              Six months of consistent side projects, mock interviews, and networking really paid off.
+              To anyone still in the grind — keep going. The right opportunity does come.
+            </div>
             <div style={styles.postActions}>
               <button style={styles.actionBtn}>Like</button>
               <button style={styles.actionBtn}>Comment</button>
@@ -216,33 +296,35 @@ export default function MemberHome({ onNavigate }) {
           </div>
         </div>
 
-        <div style={styles.card}>
-          <div style={styles.rightCardTitle}>LinkedIn News</div>
+        <div style={{ position: "sticky", top: "80px", alignSelf: "start" }}>
+          <div style={styles.card}>
+            <div style={styles.rightCardTitle}>LinkedIn News</div>
 
-          <div style={styles.newsList}>
-            <div style={styles.newsItem}>
-              <div style={styles.newsHeadline}>Tech hiring picks up for entry-level backend roles</div>
-              <div style={styles.newsMeta}>Top story • 1d ago</div>
-            </div>
+            <div style={styles.newsList}>
+              <div style={styles.newsItem}>
+                <div style={styles.newsHeadline}>Tech hiring picks up for entry-level backend roles</div>
+                <div style={styles.newsMeta}>Top story • 1d ago</div>
+              </div>
 
-            <div style={styles.newsItem}>
-              <div style={styles.newsHeadline}>Recruiters say strong portfolios are helping candidates stand out</div>
-              <div style={styles.newsMeta}>Career trends • 2d ago</div>
-            </div>
+              <div style={styles.newsItem}>
+                <div style={styles.newsHeadline}>Recruiters say strong portfolios are helping candidates stand out</div>
+                <div style={styles.newsMeta}>Career trends • 2d ago</div>
+              </div>
 
-            <div style={styles.newsItem}>
-              <div style={styles.newsHeadline}>Remote and hybrid internships remain popular among students</div>
-              <div style={styles.newsMeta}>Workplace news • 3d ago</div>
-            </div>
+              <div style={styles.newsItem}>
+                <div style={styles.newsHeadline}>Remote and hybrid internships remain popular among students</div>
+                <div style={styles.newsMeta}>Workplace news • 3d ago</div>
+              </div>
 
-            <div style={styles.newsItem}>
-              <div style={styles.newsHeadline}>More applicants are tailoring resumes for each application</div>
-              <div style={styles.newsMeta}>Job search • 4d ago</div>
-            </div>
+              <div style={styles.newsItem}>
+                <div style={styles.newsHeadline}>More applicants are tailoring resumes for each application</div>
+                <div style={styles.newsMeta}>Job search • 4d ago</div>
+              </div>
 
-            <div style={{ ...styles.newsItem, borderBottom: "none", paddingBottom: 0 }}>
-              <div style={styles.newsHeadline}>Frontend and full-stack roles continue to attract high interest</div>
-              <div style={styles.newsMeta}>Industry update • 5d ago</div>
+              <div style={{ ...styles.newsItem, borderBottom: "none", paddingBottom: 0 }}>
+                <div style={styles.newsHeadline}>Frontend and full-stack roles continue to attract high interest</div>
+                <div style={styles.newsMeta}>Industry update • 5d ago</div>
+              </div>
             </div>
           </div>
         </div>

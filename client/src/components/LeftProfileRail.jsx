@@ -3,16 +3,21 @@ import { Link } from "react-router-dom";
 import { brand } from "../styles/theme.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { getConnectionCount } from "../api/connectionApi.js";
+import { getMemberProfile } from "../api/profileApi.js";
 
 export default function LeftProfileRail({ role }) {
   const { user } = useAuth();
   const [connectionCount, setConnectionCount] = useState(0);
+  const [photoUrl, setPhotoUrl] = useState(null);
+  const [bannerUrl, setBannerUrl] = useState(null);
 
   const name = user?.displayName || (role === "member" ? "Member User" : "Recruiter User");
   const headline =
     role === "member"
       ? "Software Engineer | Open to work"
-      : "Senior Recruiter at TechCorp";
+      : user?.companyName
+        ? `Recruiter at ${user.companyName}`
+        : "Recruiter";
 
   const initials = (name || "U")
     .split(" ")
@@ -55,6 +60,31 @@ export default function LeftProfileRail({ role }) {
     };
   }, [role, user?.userId]);
 
+  useEffect(() => {
+    if (role !== "member" || !user?.userId) return;
+    getMemberProfile(user.userId)
+      .then((p) => {
+        setPhotoUrl(p?.profile_photo_url || null);
+        setBannerUrl(p?.banner_photo_url || null);
+      })
+      .catch(() => {});
+  }, [role, user?.userId]);
+
+  useEffect(() => {
+    function handlePhotoUpdated(e) {
+      setPhotoUrl(e.detail?.url || null);
+    }
+    function handleBannerUpdated(e) {
+      setBannerUrl(e.detail?.url || null);
+    }
+    window.addEventListener("profile:photoUpdated", handlePhotoUpdated);
+    window.addEventListener("profile:bannerUpdated", handleBannerUpdated);
+    return () => {
+      window.removeEventListener("profile:photoUpdated", handlePhotoUpdated);
+      window.removeEventListener("profile:bannerUpdated", handleBannerUpdated);
+    };
+  }, []);
+
   const styles = {
     card: {
       backgroundColor: "white",
@@ -65,8 +95,15 @@ export default function LeftProfileRail({ role }) {
       fontFamily: "Arial, Helvetica, sans-serif",
     },
     cover: {
-      height: "84px",
+      height: "52px",
       backgroundColor: brand.blue,
+      overflow: "hidden",
+    },
+    coverImg: {
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      display: "block",
     },
     body: {
       padding: "0 18px 18px",
@@ -103,6 +140,7 @@ export default function LeftProfileRail({ role }) {
       fontWeight: 700,
       fontSize: "18px",
       color: brand.text,
+      paddingLeft: "8px",
     },
     nameLink: {
       display: "inline-block",
@@ -112,6 +150,7 @@ export default function LeftProfileRail({ role }) {
       color: brand.text,
       textDecoration: "none",
       cursor: "pointer",
+      paddingLeft: "8px",
     },
     headline: {
       marginTop: "6px",
@@ -157,8 +196,8 @@ export default function LeftProfileRail({ role }) {
 
   const avatarContent = (
     <div style={styles.avatar}>
-      {user?.profilePhoto ? (
-        <img src={user.profilePhoto} alt={name} style={styles.avatarImage} />
+      {photoUrl ? (
+        <img src={photoUrl} alt={name} style={styles.avatarImage} />
       ) : (
         initials
       )}
@@ -167,7 +206,9 @@ export default function LeftProfileRail({ role }) {
 
   return (
     <div style={styles.card}>
-      <div style={styles.cover} />
+      <div style={styles.cover}>
+        {bannerUrl && <img src={bannerUrl} alt="" style={styles.coverImg} />}
+      </div>
       <div style={styles.body}>
         {role === "member" ? (
           <Link to={`/member/profile/${user?.userId}`} style={styles.avatarWrap}>
@@ -193,7 +234,16 @@ export default function LeftProfileRail({ role }) {
             <span style={styles.value}>42</span>
           </div>
           <div style={styles.statRow}>
-            <span>Connections</span>
+            {role === "member" ? (
+              <Link
+                to="/member/connections"
+                style={{ color: "inherit", textDecoration: "none" }}
+                onMouseEnter={(e) => e.currentTarget.style.textDecoration = "underline"}
+                onMouseLeave={(e) => e.currentTarget.style.textDecoration = "none"}
+              >Connections</Link>
+            ) : (
+              <span>Connections</span>
+            )}
             <span style={styles.value}>{connectionCount}</span>
           </div>
         </div>

@@ -29,6 +29,8 @@ const CreateJob = lazy(() => import("./pages/CreateJob.jsx"));
 const EditJob = lazy(() => import("./pages/EditJob.jsx"));
 
 const AnalyticsDashboard = lazy(() => import("./pages/AnalyticsDashboard.jsx"));
+const AIRequest = lazy(() => import("./pages/AIRequest.jsx"));
+const AIReview = lazy(() => import("./pages/AIReview.jsx"));
 
 
 function PageLoader() {
@@ -50,9 +52,8 @@ function PageLoader() {
 }
 
 function ProtectedRoute({ allowedRole, isAuthenticated, user, children }) {
-  if (!isAuthenticated || user?.role !== allowedRole) {
-    return <Navigate to="/" replace />;
-  }
+  if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (allowedRole && user?.role !== allowedRole) return <Navigate to="/" replace />;
   return children;
 }
 
@@ -237,6 +238,15 @@ export default function App() {
         />
 
         <Route
+          path="/recruiter/profile/:memberId"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <MemberProfile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/member/messages"
           element={
             <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
@@ -310,9 +320,45 @@ export default function App() {
 
 
 
+        <Route
+          path="/recruiter/connections"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <MemberConnections />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/messages"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <MemberMessages />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/ai-request"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <AIRequest />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/ai-review"
+          element={
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+              <AIReview />
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {isAuthenticated && user?.role === "member" && (
+      {isAuthenticated && (
         <MessagingWidget currentMemberId={user?.userId} />
       )}
       </>

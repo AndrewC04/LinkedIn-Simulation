@@ -219,7 +219,7 @@ export default function LoginSignupPage() {
         </div>
 
         <div style={styles.card}>
-          <div style={styles.heading}>LinkedIn Simulation</div>
+          <div style={styles.heading}>LinkedIn</div>
           <div style={styles.subheading}>Sign in or create an account</div>
 
           <div style={styles.tabRow}>

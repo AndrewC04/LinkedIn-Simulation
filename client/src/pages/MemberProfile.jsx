@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import {
@@ -12,7 +12,6 @@ import {
 import {
   getConnectionCount,
   getConnectionStatus,
-  removeConnection,
   requestConnection,
 } from "../api/connectionApi.js";
 
@@ -169,8 +168,6 @@ export default function MemberProfile() {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(null);
   const [connecting, setConnecting] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
-  const [showUnfollowConfirm, setShowUnfollowConfirm] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
 
   const [editing, setEditing]       = useState(false);
@@ -288,27 +285,6 @@ export default function MemberProfile() {
     }
   }
 
-  async function handleUnfollow() {
-    if (!user?.userId || !connectionStatus?.connection_id) return;
-
-    setDisconnecting(true);
-    try {
-      await removeConnection(connectionStatus.connection_id, user.userId);
-      setConnectionStatus(null);
-      setConnectionCount((count) => Math.max(0, count - 1));
-      window.dispatchEvent(new Event("connections:updated"));
-    } catch (e) {
-      setSaveErr(e.message || "Failed to remove connection.");
-    } finally {
-      setDisconnecting(false);
-    }
-  }
-
-  async function confirmUnfollow() {
-    setShowUnfollowConfirm(false);
-    await handleUnfollow();
-  }
-
   async function handleAddExperience() {
     if (!expDraft.title || !expDraft.company_name) return;
     setExpSaving(true);
@@ -379,7 +355,7 @@ export default function MemberProfile() {
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", backgroundColor: C.bg, fontFamily: C.font }}>
-        <LinkedInNav userType="member" />
+        <LinkedInNav />
         <div style={{ textAlign: "center", padding: "80px 0", color: C.muted, fontSize: "16px" }}>
           Loading profile…
         </div>
@@ -390,7 +366,7 @@ export default function MemberProfile() {
   if (error || !profile) {
     return (
       <div style={{ minHeight: "100vh", backgroundColor: C.bg, fontFamily: C.font }}>
-        <LinkedInNav userType="member" />
+        <LinkedInNav />
         <div style={{ maxWidth: "640px", margin: "60px auto", padding: "0 16px" }}>
           <Card style={{ padding: "40px", textAlign: "center", color: "#b91c1c" }}>
             {error || "Could not load profile."}
@@ -408,7 +384,7 @@ export default function MemberProfile() {
   /* ── layout ── */
   return (
     <div style={{ minHeight: "100vh", backgroundColor: C.bg, fontFamily: C.font }}>
-      <LinkedInNav userType="member" />
+      <LinkedInNav />
 
       <div style={{ maxWidth: "1128px", margin: "0 auto", padding: "24px 16px 48px", display: "grid", gridTemplateColumns: "1fr 300px", gap: "20px", alignItems: "start" }}>
 
@@ -431,6 +407,9 @@ export default function MemberProfile() {
                     try {
                       const res = await uploadBanner(viewingId, file);
                       setProfile((p) => ({ ...p, banner_photo_url: res.banner_photo_url }));
+                      if (isOwnProfile) {
+                        window.dispatchEvent(new CustomEvent("profile:bannerUpdated", { detail: { url: res.banner_photo_url } }));
+                      }
                     } catch (err) {
                       alert(err.message || "Upload failed");
                     } finally {
@@ -459,6 +438,9 @@ export default function MemberProfile() {
                       try {
                         const res = await uploadPhoto(viewingId, file);
                         setProfile((p) => ({ ...p, profile_photo_url: res.profile_photo_url }));
+                        if (isOwnProfile) {
+                          window.dispatchEvent(new CustomEvent("profile:photoUpdated", { detail: { url: res.profile_photo_url } }));
+                        }
                       } catch (err) {
                         alert(err.message || "Upload failed");
                       } finally {
@@ -676,15 +658,21 @@ export default function MemberProfile() {
           <Card style={{ padding: "20px" }}>
             <div style={{ fontWeight: 800, fontSize: "16px", color: C.text, marginBottom: "14px" }}>Profile Overview</div>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {[
-                ["Connections", connectionCount],
-                ["Skills listed", (profile.skills || []).length],
-              ].map(([label, val]) => (
-                <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                  <span style={{ color: C.muted }}>{label}</span>
-                  <span style={{ fontWeight: 700, color: C.text }}>{val}</span>
-                </div>
-              ))}
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                {user?.role === "member" ? (
+                  <Link to="/member/connections" style={{ color: C.muted, textDecoration: "none" }}
+                    onMouseEnter={(e) => e.currentTarget.style.textDecoration = "underline"}
+                    onMouseLeave={(e) => e.currentTarget.style.textDecoration = "none"}
+                  >Connections</Link>
+                ) : (
+                  <span style={{ color: C.muted }}>Connections</span>
+                )}
+                <span style={{ fontWeight: 700, color: C.text }}>{connectionCount}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                <span style={{ color: C.muted }}>Skills listed</span>
+                <span style={{ fontWeight: 700, color: C.text }}>{(profile.skills || []).length}</span>
+              </div>
             </div>
           </Card>
 
@@ -692,24 +680,25 @@ export default function MemberProfile() {
           {!isOwnProfile && (
             <Card style={{ padding: "20px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <Btn
-                  style={{ width: "100%", textAlign: "center" }}
-                  onClick={handleConnect}
-                  disabled={
-                    connecting ||
-                    disconnecting ||
-                    connectionStatus?.status === "pending" ||
-                    connectionStatus?.status === "accepted"
-                  }
-                >
-                  {connectionStatus?.status === "accepted"
-                    ? "Connected"
-                    : connectionStatus?.status === "pending"
-                      ? "Pending"
-                      : connecting
-                        ? "Sending…"
-                        : "Connect"}
-                </Btn>
+                {user?.role === "member" && (
+                  <Btn
+                    style={{ width: "100%", textAlign: "center" }}
+                    onClick={handleConnect}
+                    disabled={
+                      connecting ||
+                      connectionStatus?.status === "pending" ||
+                      connectionStatus?.status === "accepted"
+                    }
+                  >
+                    {connectionStatus?.status === "accepted"
+                      ? "Connected"
+                      : connectionStatus?.status === "pending"
+                        ? "Pending"
+                        : connecting
+                          ? "Sending…"
+                          : "Connect"}
+                  </Btn>
+                )}
                 <Btn
                   variant="outline"
                   style={{ width: "100%", textAlign: "center" }}
@@ -726,25 +715,10 @@ export default function MemberProfile() {
                 >
                   Message
                 </Btn>
-                {connectionStatus?.status === "pending" && (
+                {user?.role === "member" && connectionStatus?.status === "pending" && (
                   <div style={{ fontSize: "13px", color: C.muted, textAlign: "center" }}>
                     Connection request sent.
                   </div>
-                )}
-                {connectionStatus?.status === "accepted" && (
-                  <>
-                    <Btn
-                      variant="ghost"
-                      style={{ width: "100%", textAlign: "center" }}
-                      onClick={() => setShowUnfollowConfirm(true)}
-                      disabled={disconnecting}
-                    >
-                      {disconnecting ? "Removing..." : "Unfollow"}
-                    </Btn>
-                    <div style={{ fontSize: "13px", color: C.muted, textAlign: "center" }}>
-                      You are already connected.
-                    </div>
-                  </>
                 )}
               </div>
             </Card>
@@ -770,42 +744,6 @@ export default function MemberProfile() {
           </Card>
         </div>
       </div>
-
-      {showUnfollowConfirm && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2000,
-            padding: "16px",
-          }}
-        >
-          <Card style={{ width: "100%", maxWidth: "420px", padding: "22px" }}>
-            <div style={{ fontSize: "20px", fontWeight: 800, color: C.text, marginBottom: "8px" }}>
-              Confirm unfollow
-            </div>
-            <div style={{ fontSize: "14px", color: C.muted, lineHeight: 1.6, marginBottom: "18px" }}>
-              Are you sure you want to remove this connection?
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-              <Btn
-                variant="ghost"
-                onClick={() => setShowUnfollowConfirm(false)}
-                disabled={disconnecting}
-              >
-                Cancel
-              </Btn>
-              <Btn onClick={confirmUnfollow} disabled={disconnecting}>
-                {disconnecting ? "Removing..." : "Unfollow"}
-              </Btn>
-            </div>
-          </Card>
-        </div>
-      )}
 
     </div>
   );

@@ -63,6 +63,7 @@ export function AuthProvider({ children }) {
       firstName: data.first_name,
       lastName: data.last_name,
       displayName: `${data.first_name} ${data.last_name}`.trim(),
+      companyName: data.company_name || null,
       token: data.access_token,
     };
 
@@ -111,6 +112,7 @@ export function AuthProvider({ children }) {
       firstName: data.first_name,
       lastName: data.last_name,
       displayName: `${data.first_name} ${data.last_name}`.trim(),
+      companyName: data.company_name || null,
       token: data.access_token,
     };
 

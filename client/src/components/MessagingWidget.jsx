@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-import { getMemberProfile, searchMembers } from "../api/profileApi.js";
+import { getMemberProfile, searchMembers, getRecruiterProfile, searchRecruiters } from "../api/profileApi.js";
 import {
   createThread,
   listThreadMessages,
@@ -71,6 +71,18 @@ export default function MessagingWidget({ currentMemberId }) {
     return profile?.full_name || `Member ${targetId.slice(0, 8)}`;
   }
 
+  async function fetchProfile(id) {
+    if (id.startsWith("rec_")) {
+      const r = await getRecruiterProfile(id);
+      return {
+        full_name: r.full_name,
+        headline: r.company_name ? `Recruiter at ${r.company_name}` : "Recruiter",
+        location: r.company_name || "",
+      };
+    }
+    return getMemberProfile(id);
+  }
+
   async function hydrateProfiles(nextThreads) {
     const ids = Array.from(
       new Set(nextThreads.map((thread) => findOtherParticipant(thread, currentMemberId)))
@@ -81,7 +93,7 @@ export default function MessagingWidget({ currentMemberId }) {
     const resolved = await Promise.all(
       ids.map(async (id) => {
         try {
-          const profile = await getMemberProfile(id);
+          const profile = await fetchProfile(id);
           return [id, profile];
         } catch {
           return [id, null];
@@ -110,10 +122,17 @@ export default function MessagingWidget({ currentMemberId }) {
     const timer = window.setTimeout(async () => {
       try {
         setLoadingSearch(true);
-        const res = await searchMembers({ name: query }, 1, 8);
-        setSearchResults(
-          (res?.results || []).filter((member) => member.member_id !== currentMemberId)
-        );
+        const [mRes, rRes] = await Promise.allSettled([
+          searchMembers({ name: query }, 1, 6),
+          searchRecruiters(query, 4),
+        ]);
+        const members = (mRes.status === "fulfilled" ? mRes.value?.results || [] : [])
+          .filter((m) => m.member_id !== currentMemberId)
+          .map((m) => ({ id: m.member_id, full_name: m.full_name, sub: m.headline || "Member" }));
+        const recruiters = (rRes.status === "fulfilled" ? rRes.value?.results || [] : [])
+          .filter((r) => r.recruiter_id !== currentMemberId)
+          .map((r) => ({ id: r.recruiter_id, full_name: r.full_name, sub: r.company_name ? `Recruiter at ${r.company_name}` : "Recruiter" }));
+        setSearchResults([...members, ...recruiters]);
       } catch {
         setSearchResults([]);
       } finally {
@@ -535,16 +554,15 @@ export default function MessagingWidget({ currentMemberId }) {
               {loadingSearch ? (
                 <div style={styles.helper}>Searching...</div>
               ) : searchResults.length > 0 ? (
-                searchResults.map((member) => (
+                searchResults.map((result) => (
                   <button
-                    key={member.member_id}
+                    key={result.id}
                     type="button"
                     style={styles.searchResultItem}
-                    onClick={() => openThreadWithTarget(member.member_id)}
+                    onClick={() => openThreadWithTarget(result.id)}
                   >
-                    <div style={styles.threadName}>{member.full_name}</div>
-                    <div style={styles.threadPreview}>{member.headline || "No headline"}</div>
-                    <div style={styles.threadMeta}>{member.location || "No location"}</div>
+                    <div style={styles.threadName}>{result.full_name}</div>
+                    <div style={styles.threadPreview}>{result.sub}</div>
                   </button>
                 ))
               ) : (
