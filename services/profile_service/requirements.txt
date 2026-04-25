@@ -8,3 +8,6 @@ confluent-kafka
 python-dotenv
 pydantic
 email-validator
+python-jose
+passlib
+cryptography

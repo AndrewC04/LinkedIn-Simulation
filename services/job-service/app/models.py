@@ -47,3 +47,4 @@ class Recruiter(Base):
     __tablename__ = "recruiters"
 
     recruiter_id = Column(String(64), primary_key=True)
+    company_name = Column(String(255), nullable=True)

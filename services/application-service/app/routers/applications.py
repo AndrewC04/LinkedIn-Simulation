@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app import crud
-from app.auth import CurrentUser, get_current_user, require_member, require_recruiter
+from shared.auth_deps import CurrentUser, get_current_user, require_member, require_recruiter
 from app.db import get_db
 from app.kafka import emit_event
 from app.schemas import (
@@ -141,6 +141,7 @@ def get_application(
                 note_id=note.note_id,
                 application_id=note.application_id,
                 recruiter_id=note.recruiter_id,
+                recruiter_name=crud.get_recruiter_name(db, note.recruiter_id),
                 note=note.note,
                 created_at=note.created_at,
             )

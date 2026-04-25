@@ -366,7 +366,7 @@ export default function LinkedInNav({ userType }) {
       fontFamily: "Arial, Helvetica, sans-serif",
     },
     inner: {
-      maxWidth: "1280px",
+      maxWidth: "1150px",
       margin: "0 auto",
       padding: "10px 16px",
       display: "flex",
@@ -378,7 +378,6 @@ export default function LinkedInNav({ userType }) {
       alignItems: "center",
       gap: "8px",
       flexShrink: 0,
-      marginLeft: "24px",
     },
     brandBox: {
       width: "40px",
@@ -540,13 +539,6 @@ export default function LinkedInNav({ userType }) {
             style={styles.brandBox}
           >
             in
-          </Link>
-
-          <Link
-            to={resolvedUserType === "member" ? "/member/home" : "/recruiter/home"}
-            style={styles.label}
-          >
-            LinkedIn
           </Link>
 
           <MemberSearch />

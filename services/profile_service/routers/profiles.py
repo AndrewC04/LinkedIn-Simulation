@@ -21,6 +21,7 @@ from services.profile_service.models.profile import (
     ErrorResponse
 )
 from services.profile_service.services.profile_service import ProfileService
+from services.profile_service.kafka.producer import publish_profile_event
 
 router = APIRouter(prefix="", tags=["members"])
 
@@ -76,6 +77,19 @@ async def get_member(request: MemberGetRequest):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Member not found: {request.member_id}"
         )
+
+    if request.viewer_id and request.viewer_id != request.member_id:
+        try:
+            ProfileService.record_profile_view(request.member_id, request.viewer_id)
+            publish_profile_event(
+                event_type="profile.viewed",
+                member_id=request.viewer_id,
+                entity_id=request.member_id,
+                payload={"viewed_member_id": request.member_id},
+            )
+        except Exception:
+            pass  # non-critical — don't fail the request if view tracking fails
+
     return profile
 
 

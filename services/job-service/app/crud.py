@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from sqlalchemy import select, update, and_, func, or_
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 
 from app.db import redis_client
@@ -16,11 +17,12 @@ SEARCH_CACHE_TTL = 120
 RECRUITER_CACHE_TTL = 180
 
 
-def _job_to_dict(job: Job) -> dict:
+def _job_to_dict(job: Job, company_name: str | None = None) -> dict:
     return {
         "job_id": job.job_id,
         "recruiter_id": job.recruiter_id,
         "company_id": job.company_id,
+        "company_name": company_name,
         "title": job.title,
         "description": job.description,
         "seniority_level": job.seniority_level,
@@ -46,10 +48,11 @@ def _job_to_dict(job: Job) -> dict:
     }
 
 
-def _job_search_item(job: Job) -> dict:
+def _job_search_item(job: Job, company_name: str | None = None) -> dict:
     return {
         "job_id": job.job_id,
         "company_id": job.company_id,
+        "company_name": company_name,
         "title": job.title,
         "employment_type": job.employment_type,
         "location": job.location,
@@ -71,11 +74,12 @@ def _job_search_item(job: Job) -> dict:
     }
 
 
-def _recruiter_job_item(job: Job) -> dict:
+def _recruiter_job_item(job: Job, company_name: str | None = None) -> dict:
     return {
         "job_id": job.job_id,
         "title": job.title,
         "company_id": job.company_id,
+        "company_name": company_name,
         "employment_type": job.employment_type,
         "location": job.location,
         "work_mode": job.work_mode,
@@ -121,9 +125,6 @@ def recruiter_exists(db: Session, recruiter_id: str) -> bool:
 
 
 def create_job(db: Session, payload: dict) -> dict:
-    if not recruiter_exists(db, payload["recruiter_id"]):
-        raise HTTPException(status_code=404, detail="Recruiter not found")
-
     job = Job(
         job_id=f"job_{uuid4().hex[:12]}",
         recruiter_id=payload["recruiter_id"],
@@ -144,7 +145,11 @@ def create_job(db: Session, payload: dict) -> dict:
     )
 
     db.add(job)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=404, detail="Recruiter not found")
     db.refresh(job)
 
     _invalidate_job_related_cache(job.job_id, job.recruiter_id)
@@ -168,18 +173,24 @@ def get_job(db: Session, job_id: str, increment_view: bool = False) -> dict:
     if cached and not increment_view:
         return cached
 
-    stmt = select(Job).where(Job.job_id == job_id)
-    job = db.execute(stmt).scalar_one_or_none()
+    stmt = (
+        select(Job, Recruiter.company_name)
+        .outerjoin(Recruiter, Job.recruiter_id == Recruiter.recruiter_id)
+        .where(Job.job_id == job_id)
+    )
+    row = db.execute(stmt).one_or_none()
 
-    if not job:
+    if not row:
         raise HTTPException(status_code=404, detail="Job not found")
+
+    job, company_name = row
 
     if increment_view:
         job.views_count += 1
         db.commit()
         db.refresh(job)
 
-    result = _job_to_dict(job)
+    result = _job_to_dict(job, company_name=company_name)
     _cache_set(cache_key, result, JOB_CACHE_TTL)
     return result
 
@@ -240,7 +251,11 @@ def search_jobs(db: Session, filters: dict, page: int, page_size: int) -> dict:
     if cached:
         return cached
 
-    stmt = select(Job).where(Job.status == "open")
+    stmt = (
+        select(Job, Recruiter.company_name)
+        .outerjoin(Recruiter, Job.recruiter_id == Recruiter.recruiter_id)
+        .where(Job.status == "open")
+    )
 
     keyword = filters.get("keyword")
     location = filters.get("location")
@@ -273,13 +288,13 @@ def search_jobs(db: Session, filters: dict, page: int, page_size: int) -> dict:
     total = db.execute(count_stmt).scalar_one()
 
     stmt = stmt.order_by(Job.posted_datetime.desc()).offset((page - 1) * page_size).limit(page_size)
-    jobs = db.execute(stmt).scalars().all()
+    rows = db.execute(stmt).all()
 
     result = {
         "total": total,
         "page": page,
         "page_size": page_size,
-        "results": [_job_search_item(job) for job in jobs],
+        "results": [_job_search_item(job, company_name=company_name) for job, company_name in rows],
     }
 
     _cache_set(cache_key, result, SEARCH_CACHE_TTL)
@@ -326,7 +341,11 @@ def jobs_by_recruiter(db: Session, recruiter_id: str, status_filter: str | None,
     if cached:
         return cached
 
-    stmt = select(Job).where(Job.recruiter_id == recruiter_id)
+    stmt = (
+        select(Job, Recruiter.company_name)
+        .outerjoin(Recruiter, Job.recruiter_id == Recruiter.recruiter_id)
+        .where(Job.recruiter_id == recruiter_id)
+    )
 
     if status_filter:
         stmt = stmt.where(Job.status == status_filter)
@@ -335,14 +354,14 @@ def jobs_by_recruiter(db: Session, recruiter_id: str, status_filter: str | None,
     total = db.execute(count_stmt).scalar_one()
 
     stmt = stmt.order_by(Job.posted_datetime.desc()).offset((page - 1) * page_size).limit(page_size)
-    jobs = db.execute(stmt).scalars().all()
+    rows = db.execute(stmt).all()
 
     result = {
         "recruiter_id": recruiter_id,
         "total": total,
         "page": page,
         "page_size": page_size,
-        "results": [_recruiter_job_item(job) for job in jobs],
+        "results": [_recruiter_job_item(job, company_name=company_name) for job, company_name in rows],
     }
 
     _cache_set(cache_key, result, RECRUITER_CACHE_TTL)

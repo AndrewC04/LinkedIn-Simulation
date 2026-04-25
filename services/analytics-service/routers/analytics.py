@@ -210,8 +210,8 @@ async def member_dashboard(req: MemberDashboardRequest):
 
     try:
         profile_views = events_col.count_documents({
-            "event_type": "job.viewed",
-            "actor_id": req.member_id,
+            "event_type": "profile.viewed",
+            "entity.entity_id": req.member_id,
             "timestamp": {"$gte": since}
         })
 
@@ -348,8 +348,8 @@ async def profile_views_per_day(req: ProfileViewsRequest):
     since = window_start(req.window_days)
     pipeline = [
         {"$match": {
-            "event_type": "job.viewed",
-            "actor_id": req.member_id,
+            "event_type": "profile.viewed",
+            "entity.entity_id": req.member_id,
             "timestamp": {"$gte": since}
         }},
         {"$group": {

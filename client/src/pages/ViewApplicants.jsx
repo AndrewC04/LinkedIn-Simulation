@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { applicationsByJob } from "../api/applicationApi";
+import { getJob } from "../api/jobApi.js";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 
 function StatusBadge({ status }) {
@@ -32,6 +33,7 @@ function StatusBadge({ status }) {
 export default function ViewApplicants() {
   const { jobId } = useParams();
   const [applications, setApplications] = useState([]);
+  const [jobTitle, setJobTitle] = useState("");
   const [loading, setLoading] = useState(true);
 
   const styles = {
@@ -110,8 +112,12 @@ export default function ViewApplicants() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await applicationsByJob(jobId);
-        setApplications(data.applications || []);
+        const [appData, jobData] = await Promise.all([
+          applicationsByJob(jobId),
+          getJob(jobId),
+        ]);
+        setApplications(appData.applications || []);
+        setJobTitle(jobData?.title || jobId);
       } catch (err) {
         alert(err.message);
       } finally {
@@ -129,7 +135,7 @@ export default function ViewApplicants() {
       <div style={styles.container}>
         <div style={styles.headerCard}>
           <h1 style={styles.title}>View Applicants</h1>
-          <p style={styles.subtitle}>Applicants for job: {jobId}</p>
+          <p style={styles.subtitle}>Applicants for: {jobTitle}</p>
         </div>
 
         <div style={styles.tableCard}>

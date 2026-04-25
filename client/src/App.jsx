@@ -51,20 +51,29 @@ function PageLoader() {
   );
 }
 
-function ProtectedRoute({ allowedRole, isAuthenticated, user, children }) {
+function ProtectedRoute({ allowedRole, isAuthenticated, loading, user, children }) {
+  if (loading) return <PageLoader />;
   if (!isAuthenticated) return <Navigate to="/" replace />;
   if (allowedRole && user?.role !== allowedRole) return <Navigate to="/" replace />;
   return children;
 }
 
 export default function App() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
 
   return (
     <Suspense fallback={<PageLoader />}>
       <>
       <Routes>
-        <Route path="/" element={<LoginSignupPage />} />
+        <Route
+          path="/"
+          element={
+            loading ? <PageLoader /> :
+            isAuthenticated
+              ? <Navigate to={user.role === "recruiter" ? "/recruiter/home" : "/member/home"} replace />
+              : <LoginSignupPage />
+          }
+        />
 
         <Route
           path="/member/home"
@@ -82,7 +91,7 @@ export default function App() {
         <Route
           path="/member/jobs/:jobId/apply"
           element={
-            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <SubmitApplication />
             </ProtectedRoute>
           }
@@ -195,7 +204,7 @@ export default function App() {
         <Route
           path="/member/jobs"
           element={
-            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <JobSearch />
             </ProtectedRoute>
           }
@@ -204,7 +213,7 @@ export default function App() {
         <Route
           path="/member/jobs/saved"
           element={
-            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <SavedJobs />
             </ProtectedRoute>
           }
@@ -213,7 +222,7 @@ export default function App() {
         <Route
           path="/member/jobs/:jobId"
           element={
-            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <JobDetails />
             </ProtectedRoute>
           }
@@ -222,7 +231,7 @@ export default function App() {
         <Route
           path="/member/profile"
           element={
-            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <MemberProfile />
             </ProtectedRoute>
           }
@@ -231,7 +240,7 @@ export default function App() {
         <Route
           path="/member/profile/:memberId"
           element={
-            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <MemberProfile />
             </ProtectedRoute>
           }
@@ -240,7 +249,7 @@ export default function App() {
         <Route
           path="/recruiter/profile/:memberId"
           element={
-            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <MemberProfile />
             </ProtectedRoute>
           }
@@ -249,7 +258,7 @@ export default function App() {
         <Route
           path="/member/messages"
           element={
-            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <MemberMessages />
             </ProtectedRoute>
           }
@@ -258,7 +267,7 @@ export default function App() {
         <Route
           path="/member/connections"
           element={
-            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <MemberConnections />
             </ProtectedRoute>
           }
@@ -267,7 +276,7 @@ export default function App() {
         <Route
           path="/recruiter/jobs"
           element={
-            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <RecruiterJobsDashboard />
             </ProtectedRoute>
           }
@@ -276,7 +285,7 @@ export default function App() {
         <Route
           path="/recruiter/jobs/create"
           element={
-            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <CreateJob />
             </ProtectedRoute>
           }
@@ -285,7 +294,7 @@ export default function App() {
         <Route
           path="/recruiter/jobs/edit/:jobId"
           element={
-            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <EditJob />
             </ProtectedRoute>
           }
@@ -294,7 +303,7 @@ export default function App() {
         <Route
           path="/recruiter/jobs/:jobId"
           element={
-            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <JobDetails />
             </ProtectedRoute>
           }
@@ -303,7 +312,7 @@ export default function App() {
         <Route
           path="/member/analytics"
           element={
-            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="member" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <AnalyticsDashboard />
             </ProtectedRoute>
           }
@@ -312,7 +321,7 @@ export default function App() {
         <Route
           path="/recruiter/analytics"
           element={
-            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <AnalyticsDashboard />
             </ProtectedRoute>
           }
@@ -323,7 +332,7 @@ export default function App() {
         <Route
           path="/recruiter/connections"
           element={
-            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <MemberConnections />
             </ProtectedRoute>
           }
@@ -332,7 +341,7 @@ export default function App() {
         <Route
           path="/recruiter/messages"
           element={
-            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <MemberMessages />
             </ProtectedRoute>
           }
@@ -341,7 +350,7 @@ export default function App() {
         <Route
           path="/recruiter/ai-request"
           element={
-            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <AIRequest />
             </ProtectedRoute>
           }
@@ -350,7 +359,7 @@ export default function App() {
         <Route
           path="/recruiter/ai-review"
           element={
-            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} user={user}>
+            <ProtectedRoute allowedRole="recruiter" isAuthenticated={isAuthenticated} loading={loading} user={user}>
               <AIReview />
             </ProtectedRoute>
           }

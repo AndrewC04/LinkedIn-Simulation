@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 import uuid
 
-from app.security import hash_password, verify_password, create_access_token
+from shared.security import hash_password, verify_password, create_access_token
 
 
 def create_member_account(
@@ -122,6 +122,7 @@ def create_recruiter_account(
         "role": "recruiter",
         "first_name": first_name,
         "last_name": last_name,
+        "company_id": company_id,
         "access_token": access_token,
         "token_type": "bearer",
     }
@@ -163,7 +164,7 @@ def login_user(db: Session, *, email: str, password: str, role: str) -> dict:
         row = db.execute(
             text(
                 """
-                SELECT recruiter_id, first_name, last_name, email, company_name, password_hash
+                SELECT recruiter_id, first_name, last_name, email, company_name, password_hash, company_id
                 FROM recruiters
                 WHERE email = :email
                 """
@@ -184,6 +185,7 @@ def login_user(db: Session, *, email: str, password: str, role: str) -> dict:
             "last_name": row[2],
             "email": row[3],
             "company_name": row[4],
+            "company_id": row[6],
             "role": "recruiter",
             "access_token": access_token,
             "token_type": "bearer",

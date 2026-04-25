@@ -199,8 +199,12 @@ export default function MemberProfile() {
       setError(null);
 
       try {
-        const p = await getMemberProfile(viewingId);
+        const p = await getMemberProfile(viewingId, isOwnProfile ? null : user?.userId);
         if (cancelled) return;
+
+        if (!isOwnProfile) {
+          window.dispatchEvent(new CustomEvent("profile:viewReceived", { detail: { viewed_member_id: viewingId } }));
+        }
 
         setProfile(p);
         setConnectionCount(0);

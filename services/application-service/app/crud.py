@@ -232,6 +232,17 @@ def get_job_summary(db: Session, job_id: str) -> tuple[str, str]:
 
     return row[0] or job_id, row[1] or "Unknown Company"
 
+def get_recruiter_name(db: Session, recruiter_id: str) -> str:
+    row = db.execute(
+        text("SELECT first_name, last_name FROM recruiters WHERE recruiter_id = :recruiter_id"),
+        {"recruiter_id": recruiter_id},
+    ).fetchone()
+    if row is None:
+        return recruiter_id
+    full_name = f"{row[0] or ''} {row[1] or ''}".strip()
+    return full_name if full_name else recruiter_id
+
+
 def get_notes_for_application(db: Session, application_id: str) -> list[ApplicationNote]:
     return (
         db.query(ApplicationNote)

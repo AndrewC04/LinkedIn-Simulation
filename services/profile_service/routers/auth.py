@@ -2,14 +2,20 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.auth_crud import create_member_account, create_recruiter_account, login_user, get_recruiter, search_recruiters
-from app.auth_schemas import (
+from services.profile_service.auth_crud import (
+    create_member_account,
+    create_recruiter_account,
+    login_user,
+    get_recruiter,
+    search_recruiters,
+)
+from services.profile_service.auth_schemas import (
     AuthResponse,
     LoginRequest,
     MemberSignupRequest,
     RecruiterSignupRequest,
 )
-from app.db import get_db
+from shared.mysql_client import get_db_dependency as get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

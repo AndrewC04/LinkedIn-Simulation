@@ -8,6 +8,7 @@ import { getMemberProfile } from "../api/profileApi.js";
 export default function LeftProfileRail({ role }) {
   const { user } = useAuth();
   const [connectionCount, setConnectionCount] = useState(0);
+  const [profileViews, setProfileViews] = useState(0);
   const [photoUrl, setPhotoUrl] = useState(null);
   const [bannerUrl, setBannerUrl] = useState(null);
 
@@ -60,14 +61,36 @@ export default function LeftProfileRail({ role }) {
     };
   }, [role, user?.userId]);
 
-  useEffect(() => {
+  function refreshProfile() {
     if (role !== "member" || !user?.userId) return;
     getMemberProfile(user.userId)
       .then((p) => {
         setPhotoUrl(p?.profile_photo_url || null);
         setBannerUrl(p?.banner_photo_url || null);
+        setProfileViews(Number(p?.profile_views) || 0);
       })
       .catch(() => {});
+  }
+
+  useEffect(() => {
+    refreshProfile();
+  }, [role, user?.userId]);
+
+  useEffect(() => {
+    function handleViewReceived(e) {
+      if (e.detail?.viewed_member_id === user?.userId) {
+        setProfileViews((v) => v + 1);
+      }
+    }
+    function handleFocus() {
+      refreshProfile();
+    }
+    window.addEventListener("profile:viewReceived", handleViewReceived);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.removeEventListener("profile:viewReceived", handleViewReceived);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, [role, user?.userId]);
 
   useEffect(() => {
@@ -231,7 +254,7 @@ export default function LeftProfileRail({ role }) {
         <div style={styles.stats}>
           <div style={styles.statRow}>
             <span>Profile viewers</span>
-            <span style={styles.value}>42</span>
+            <span style={styles.value}>{profileViews}</span>
           </div>
           <div style={styles.statRow}>
             {role === "member" ? (
