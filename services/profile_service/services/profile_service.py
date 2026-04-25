@@ -116,6 +116,7 @@ class ProfileService:
             "skills": json.loads(result[8]) if result[8] else None,
             "summary": result[7],
             "connections": result[9] or 0,
+            "profile_views": result[10] or 0,
             "created_at": result[11] or datetime.utcnow(),
             "updated_at": result[12] or datetime.utcnow(),
             "profile_photo_url": result[13],
@@ -395,6 +396,29 @@ class ProfileService:
             )
             db.commit()
         return EducationItem(education_id=edu_id, member_id=member_id, **data)
+
+    @staticmethod
+    def record_profile_view(member_id: str, viewer_id: str) -> None:
+        """
+        Upsert profile_views_daily and increment members.profile_views.
+        Called fire-and-forget when someone views another member's profile.
+        """
+        today = datetime.utcnow().date().isoformat()
+        with get_db() as db:
+            db.execute(
+                text("""
+                    INSERT INTO profile_views_daily (member_id, view_date, view_count)
+                    VALUES (:member_id, :view_date, 1)
+                    ON DUPLICATE KEY UPDATE view_count = view_count + 1
+                """),
+                {"member_id": member_id, "view_date": today}
+            )
+            db.execute(
+                text("UPDATE members SET profile_views = profile_views + 1 WHERE member_id = :id"),
+                {"id": member_id}
+            )
+            db.commit()
+        cache_delete(member_key(member_id))
 
     @staticmethod
     def delete_education(education_id: str) -> bool:

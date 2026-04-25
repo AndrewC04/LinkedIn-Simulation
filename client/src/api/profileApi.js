@@ -14,8 +14,8 @@ async function postJson(url, body) {
   return res.json();
 }
 
-export function getMemberProfile(memberId) {
-  return postJson(`${PROFILE_API}/members/get`, { member_id: memberId });
+export function getMemberProfile(memberId, viewerId = null) {
+  return postJson(`${PROFILE_API}/members/get`, { member_id: memberId, viewer_id: viewerId });
 }
 
 export function updateMemberProfile(memberId, fields) {

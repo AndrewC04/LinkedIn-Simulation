@@ -33,6 +33,7 @@ class MemberCreateResponse(BaseModel):
 class MemberGetRequest(BaseModel):
     """POST /members/get request."""
     member_id: str
+    viewer_id: Optional[str] = None
 
 
 class MemberSearchResult(BaseModel):
@@ -58,6 +59,7 @@ class MemberGetResponse(BaseModel):
     skills: Optional[List[str]] = None
     summary: Optional[str] = None
     connections: int = 0
+    profile_views: int = 0
     created_at: datetime
     updated_at: datetime
 
