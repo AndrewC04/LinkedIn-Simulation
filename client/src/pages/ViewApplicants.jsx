@@ -165,7 +165,7 @@ export default function ViewApplicants() {
                         <StatusBadge status={app.status} />
                       </td>
                       <td style={styles.td}>
-                        {new Date(app.submitted_at).toLocaleString()}
+                        {new Date(app.submitted_at + 'Z').toLocaleString()}
                       </td>
                       <td style={styles.td}>
                         <a

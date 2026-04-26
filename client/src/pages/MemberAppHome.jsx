@@ -234,7 +234,7 @@ export default function MemberAppHome() {
                       </td>
                       <td style={styles.td}>
                         {app.submitted_at
-                          ? new Date(app.submitted_at).toLocaleString([], {
+                          ? new Date(app.submitted_at + 'Z').toLocaleString([], {
                               year: "numeric",
                               month: "numeric",
                               day: "numeric",

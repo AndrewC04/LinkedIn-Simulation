@@ -281,7 +281,7 @@ export default function ViewApplicationDetails() {
                 {renderDetail(
                   "Submitted",
                   application.submitted_at
-                    ? new Date(application.submitted_at).toLocaleString([], {
+                    ? new Date(application.submitted_at + 'Z').toLocaleString([], {
                         year: "numeric",
                         month: "numeric",
                         day: "numeric",

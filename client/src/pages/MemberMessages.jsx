@@ -51,7 +51,7 @@ export default function MemberMessages() {
 
   function formatTime(value) {
     if (!value) return "";
-    const date = new Date(value);
+    const date = new Date(value + "Z");
     if (Number.isNaN(date.getTime())) return "";
     return date.toLocaleString("en-US", {
       month: "short",
