@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { brand } from "../styles/theme.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { getConnectionCount } from "../api/connectionApi.js";
-import { getMemberProfile } from "../api/profileApi.js";
+import { getMemberProfile, getEducation } from "../api/profileApi.js";
 
 export default function LeftProfileRail({ role }) {
   const { user } = useAuth();
@@ -11,6 +11,7 @@ export default function LeftProfileRail({ role }) {
   const [profileViews, setProfileViews] = useState(0);
   const [photoUrl, setPhotoUrl] = useState(null);
   const [bannerUrl, setBannerUrl] = useState(null);
+  const [education, setEducation] = useState(null);
 
   const name = user?.displayName || (role === "member" ? "Member User" : "Recruiter User");
   const headline =
@@ -68,6 +69,11 @@ export default function LeftProfileRail({ role }) {
         setPhotoUrl(p?.profile_photo_url || null);
         setBannerUrl(p?.banner_photo_url || null);
         setProfileViews(Number(p?.profile_views) || 0);
+      })
+      .catch(() => {});
+    getEducation(user.userId)
+      .then((res) => {
+        setEducation(res?.education?.[0] || null);
       })
       .catch(() => {});
   }
@@ -180,6 +186,7 @@ export default function LeftProfileRail({ role }) {
       fontSize: "14px",
       color: brand.muted,
       lineHeight: 1.5,
+      paddingLeft: "8px",
     },
     stats: {
       borderTop: `1px solid ${brand.border}`,
@@ -250,6 +257,13 @@ export default function LeftProfileRail({ role }) {
         )}
 
         <div style={styles.headline}>{headline}</div>
+
+        {role === "member" && education && (
+          <div style={{ fontSize: "13px", color: "#4b5563", marginTop: "6px", paddingLeft: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
+            <span style={{ fontSize: "16px" }}>🎓</span>
+            <span>{education.school_name}</span>
+          </div>
+        )}
 
         <div style={styles.stats}>
           <div style={styles.statRow}>
