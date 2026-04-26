@@ -19,6 +19,7 @@ EVENT_TYPES = {
     "connection.accepted",
     "ai.requests",
     "ai.results",
+    "profile.viewed",
 }
 
 # Valid entity types
