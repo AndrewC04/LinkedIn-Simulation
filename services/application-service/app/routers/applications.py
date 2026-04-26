@@ -256,6 +256,7 @@ def update_status(
             "previous_status": previous_status,
             "new_status": application.status,
             "reason": payload.reason,
+            "member_id": application.member_id,
         },
     )
 

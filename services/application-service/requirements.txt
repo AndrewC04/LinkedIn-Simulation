@@ -12,3 +12,4 @@ passlib==1.7.4
 python-jose
 python-multipart
 email-validator
+confluent-kafka==2.3.0

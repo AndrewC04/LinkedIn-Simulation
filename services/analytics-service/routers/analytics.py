@@ -217,11 +217,11 @@ async def member_dashboard(req: MemberDashboardRequest):
 
         pipeline = [
             {"$match": {
-                "event_type": "application.status.updated",
-                "actor_id": req.member_id,
+                "event_type": "application.status_updated",
+                "payload.member_id": req.member_id,
             }},
             {"$group": {
-                "_id": "$payload.status",
+                "_id": "$payload.new_status",
                 "count": {"$sum": 1}
             }},
             {"$project": {"status": "$_id", "count": 1, "_id": 0}}
