@@ -15,7 +15,7 @@ export default function CreateJob() {
 
   function saveCompanyName(jobId, companyName) {
     const current = JSON.parse(localStorage.getItem(COMPANY_NAMES_KEY) || "{}");
-  
+
     localStorage.setItem(
       COMPANY_NAMES_KEY,
       JSON.stringify({
@@ -29,28 +29,28 @@ export default function CreateJob() {
     try {
       setLoading(true);
       setError("");
-  
+
       const companyName = payload.company_name?.trim() || "Company not listed";
-  
+
       const finalPayload = {
         ...payload,
         recruiter_id: user?.userId,
         company_id: user?.companyId || payload.company_id,
       };
-  
+
       delete finalPayload.company_name;
-  
+
       const createdJob = await createJob(finalPayload);
-  
+
       const jobId =
         createdJob?.job_id ||
         createdJob?.job?.job_id ||
         createdJob?.data?.job_id;
-  
+
       if (jobId) {
         saveCompanyName(jobId, companyName);
       }
-  
+
       navigate("/recruiter/jobs");
     } catch (err) {
       setError(err?.message || "Failed to create job");
@@ -81,6 +81,7 @@ export default function CreateJob() {
           onSubmit={handleSubmit}
           submitLabel="Create Job"
           loading={loading}
+          showCompanyName={false}
         />
       </div>
     </div>

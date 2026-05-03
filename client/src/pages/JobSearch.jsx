@@ -131,8 +131,7 @@ export default function JobSearch() {
               key={job.job_id}
               job={job}
               onView={(jobId) => {
-                if (user?.role === "member") navigate(`/member/jobs/${jobId}`);
-                else navigate(`/recruiter/jobs/${jobId}`);
+                navigate(`/member/jobs/${jobId}`);
               }}
               onApply={handleApply}
               onToggleSave={toggleSave}

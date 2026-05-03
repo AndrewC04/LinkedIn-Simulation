@@ -22,6 +22,7 @@ export default function JobForm({
   onSubmit,
   submitLabel = "Save Job",
   includeOwnerFields = true,
+  showCompanyName = true,
   loading = false,
 }) {
   const mergedInitial = useMemo(
@@ -100,13 +101,15 @@ export default function JobForm({
           </>
         )}
 
-        <input
-          name="company_name"
-          placeholder="Company Name"
-          value={form.company_name}
-          onChange={handleChange}
-          required
-        />
+        {showCompanyName && (
+          <input
+            name="company_name"
+            placeholder="Company Name"
+            value={form.company_name}
+            onChange={handleChange}
+            required
+          />
+        )}
 
         <input
           name="title"
