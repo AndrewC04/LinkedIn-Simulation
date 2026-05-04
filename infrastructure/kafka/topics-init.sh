@@ -52,5 +52,6 @@ create_topic "ai.results"
 
 # ── Analytics ingestion (catch-all) ──
 create_topic "analytics.events"
+create_topic "profile.viewed"
 
 echo "All topics created successfully."

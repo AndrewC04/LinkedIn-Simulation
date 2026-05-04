@@ -46,7 +46,7 @@ class JobKafkaProducer:
 
         try:
             self._producer.send(topic, event)
-            self._producer.flush()
+            self._producer.flush(timeout=10)
         except Exception as exc:
             logger.warning("Failed to publish Kafka event %s: %s", topic, exc)
 

@@ -1,19 +1,25 @@
 #!/bin/bash
-
 echo "🚀 Starting LinkedIn Simulation..."
-
-# Start Docker infrastructure
 echo "▶ Building and starting Docker containers..."
 docker compose -f infrastructure/docker-compose.yml -f infrastructure/compose.BSK.yml up -d --build
-sleep 20
-
-# Start Frontend
+echo "▶ Waiting for services to be ready..."
+sleep 30
+echo "▶ Checking if seed data is needed..."
+MEMBER_COUNT=$(docker exec mysql mysql -u appuser -papppassword linkedin_db -se "SELECT COUNT(*) FROM members;" 2>/dev/null)
+if [ "$MEMBER_COUNT" = "0" ] || [ -z "$MEMBER_COUNT" ]; then
+  echo "▶ Seeding database..."
+  docker cp scripts/seed_data.py profile-api:/tmp/seed_data.py
+  docker exec profile-api pip install faker pymongo tqdm -q
+  docker exec profile-api sh -c "MONGO_URI='mongodb://root:rootpassword@mongodb:27017/linkedin_events' python3 /tmp/seed_data.py"
+  echo "✅ Seed complete!"
+else
+  echo "✅ Database already has data, skipping seed."
+fi
 echo "▶ Starting Frontend..."
 cd client
 npm install --silent
 npm run dev &
 cd ..
-
 echo ""
 echo "✅ All services started!"
 echo "   Frontend:    http://localhost:5173"
