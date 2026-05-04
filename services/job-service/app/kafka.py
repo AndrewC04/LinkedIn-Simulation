@@ -20,7 +20,9 @@ class JobKafkaProducer:
                 self._producer = KafkaProducer(
                     bootstrap_servers=settings.kafka_bootstrap_servers,
                     value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-                    linger_ms=10,
+                    linger_ms=100,
+                    request_timeout_ms=30000,
+                    retries=3,
                 )
             except Exception as exc:
                 logger.warning("Kafka producer could not start, continuing without Kafka: %s", exc)
@@ -45,8 +47,8 @@ class JobKafkaProducer:
             return
 
         try:
-            self._producer.send(topic, event)
-            self._producer.flush(timeout=10)
+            future = self._producer.send(topic, event)
+            future.get(timeout=10)
         except Exception as exc:
             logger.warning("Failed to publish Kafka event %s: %s", topic, exc)
 
