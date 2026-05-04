@@ -3,6 +3,7 @@
 import asyncio
 import os
 from openai import OpenAI
+from pymongo import MongoClient
 from models.schemas import (
     ResumeParserRequest, JobMatchRequest,
     SupervisorResult, ShortlistedCandidate
@@ -14,44 +15,15 @@ from db.mongo import update_task_status, log_trace
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Minimum match score to be shortlisted
-SHORTLIST_THRESHOLD = 0.4
+SHORTLIST_THRESHOLD = 0.2
 
-# Mock resume store — in production this comes from Profile Service (:8001)
-MOCK_RESUMES = {
-    "user1": """
-        Jane Smith
-        Senior Software Engineer at Netflix (2020-2024)
-        Data Engineer at Airbnb (2017-2020)
-        B.S. Computer Science, UC Berkeley
-        Skills: Python, Kafka, Spark, AWS, MongoDB, Docker, FastAPI, Machine Learning
-    """,
-    "user2": """
-        Bob Lee
-        Junior Developer at Startup (2023-2024)
-        B.S. Information Systems, San Jose State University
-        Skills: JavaScript, React, SQL, Python
-    """,
-    "user3": """
-        Alice Chen
-        Principal Data Scientist at LinkedIn (2018-2024)
-        Senior ML Engineer at Twitter (2015-2018)
-        M.S. Data Science, Stanford University
-        Skills: Python, Machine Learning, Deep Learning, NLP, Spark, AWS, Kubernetes
-    """,
-    "user4": """
-        Mark Davis
-        DevOps Engineer at Cisco (2019-2023)
-        B.S. Computer Engineering, UCLA
-        Skills: Docker, Kubernetes, AWS, CI/CD, Linux, Python, Bash
-    """,
-    "user5": """
-        Sara Johnson
-        Full Stack Engineer at Google (2021-2024)
-        Software Engineer at Microsoft (2018-2021)
-        B.S. Software Engineering, Carnegie Mellon
-        Skills: Python, FastAPI, React, MongoDB, Redis, Docker, Kafka
-    """
-}
+# MongoDB connection to the linkedin database (where member resumes live)
+_mongo_host = os.getenv("MONGO_HOST", "localhost")
+_mongo_user = os.getenv("MONGO_USER", "root")
+_mongo_pass = os.getenv("MONGO_PASSWORD", "rootpassword")
+_mongo_port = os.getenv("MONGO_PORT", "27017")
+_profile_client = MongoClient(f"mongodb://{_mongo_user}:{_mongo_pass}@{_mongo_host}:{_mongo_port}")
+_members_col = _profile_client["linkedin"]["members"]
 
 # Mock job store — in production this comes from Job Service (:8002)
 MOCK_JOBS = {
@@ -74,6 +46,14 @@ MOCK_JOBS = {
         "location":        "New York, NY"
     }
 }
+
+
+def get_resume_text(candidate_id: str) -> str | None:
+    """Fetch resume text from MongoDB linkedin.members collection."""
+    member = _members_col.find_one({"member_id": candidate_id})
+    if member:
+        return member.get("resume_text")
+    return None
 
 
 # ── Outreach Draft Generator (LLM-powered) ────────────────────────────────────
@@ -122,7 +102,7 @@ async def run_supervisor(
     Orchestrates the full AI pipeline:
     1. Update task status to 'running'
     2. Fetch job details
-    3. For each candidate: parse resume → match to job
+    3. For each candidate: fetch resume from MongoDB → parse → match to job
     4. Shortlist candidates above threshold
     5. Generate outreach drafts (LLM)
     6. Update task status to 'awaiting_approval'
@@ -147,11 +127,11 @@ async def run_supervisor(
     shortlisted = []
 
     for candidate_id in candidate_ids:
-        resume_text = MOCK_RESUMES.get(candidate_id)
+        resume_text = get_resume_text(candidate_id)
         if not resume_text:
             log_trace(trace_id, "candidate_skipped", {
                 "candidate_id": candidate_id,
-                "reason": "no resume"
+                "reason": "no resume in MongoDB"
             })
             continue
 
