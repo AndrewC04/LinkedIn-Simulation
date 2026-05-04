@@ -32,3 +32,4 @@ node_modules/
 
 # Application uploads
 services/application-service/uploads/.env
+services/ai_service/Resume.csv
