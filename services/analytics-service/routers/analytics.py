@@ -147,18 +147,26 @@ async def funnel(req: FunnelRequest):
     funnel_steps = {
         "viewed":    "job.viewed",
         "saved":     "job.saved",
-        "applied":   "job.applied",
+        
         "submitted": "application.submitted",
     }
 
     result = {"job_id": req.job_id}
     try:
         for step, event_type in funnel_steps.items():
-            count = events_col.count_documents({
-                "event_type": event_type,
-                "entity.entity_id": req.job_id,
-                "timestamp": {"$gte": since}
-            })
+            if event_type == "application.submitted":
+                query = {
+                    "event_type": event_type,
+                    "payload.job_id": req.job_id,
+                    "timestamp": {"$gte": since}
+                }
+            else:
+                query = {
+                    "event_type": event_type,
+                    "entity.entity_id": req.job_id,
+                    "timestamp": {"$gte": since}
+                }
+            count = events_col.count_documents(query)
             result[step] = count
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

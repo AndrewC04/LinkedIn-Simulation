@@ -117,7 +117,7 @@ function RecruiterDashboard({ memberId }) {
     load();
   }, [metric, memberId]);
 
-  const funnelSteps = funnel ? ["viewed", "saved", "applied", "submitted"] : [];
+  const funnelSteps = funnel ? ["viewed", "saved", "submitted"] : [];
   const funnelMax = funnel ? Math.max(...funnelSteps.map((s) => funnel[s] || 0), 1) : 1;
 
   if (loading) return <div style={{ textAlign: "center", padding: "60px", color: brand.muted }}>Loading analytics...</div>;
