@@ -31,4 +31,4 @@ node_modules/
 .idea/
 
 # Application uploads
-services/application-service/uploads/
+services/application-service/uploads/.env

@@ -58,6 +58,7 @@ class AITaskRequest(BaseModel):
     job_id: str
     recruiter_id: str
     candidate_ids: List[str]
+    resumes: Optional[dict] = None
     trace_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
 
 class AITaskResponse(BaseModel):

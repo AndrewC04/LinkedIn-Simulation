@@ -290,6 +290,7 @@ services:
       MONGO_USER: root
       MONGO_PASSWORD: rootpassword
       MONGO_DATABASE: linkedin_events
+      OPENAI_API_KEY: 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
     ports:
       - "8006:8006"
 

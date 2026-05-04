@@ -18,9 +18,17 @@ logger = logging.getLogger(__name__)
 
 def kafka_handler(message: dict):
     """Receives a Kafka message from ai.requests and runs the supervisor pipeline."""
+    import asyncio
     try:
-        logger.info(f"[kafka_handler] Received task: {message.get('task_id')}")
-        run_supervisor(message)
+        payload = message.get("payload", message)
+        task_id = payload.get("task_id")
+        trace_id = payload.get("trace_id")
+        job_id = payload.get("job_id")
+        candidate_ids = payload.get("candidate_ids", [])
+        resumes = payload.get("resumes", {})
+
+        logger.info(f"[kafka_handler] Received task: {task_id}")
+        asyncio.run(run_supervisor(task_id, trace_id, job_id, candidate_ids, resumes))
     except Exception as e:
         logger.error(f"[kafka_handler] Failed to process message: {e}")
 

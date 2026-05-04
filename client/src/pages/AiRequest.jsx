@@ -20,7 +20,7 @@ export default function AIRequest() {
 
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
-  const [candidateIds, setCandidateIds] = useState("");
+  const [candidateList, setCandidateList] = useState([{ id: "", resume: "" }]);
   const [loading, setLoading] = useState(false);
   const [polling, setPolling] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
@@ -46,15 +46,16 @@ export default function AIRequest() {
     setStatusMsg("Submitting task to AI service...");
 
     try {
-      const candidate_ids = candidateIds
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
+      const candidate_ids = candidateList.map((c) => c.id).filter(Boolean);
+      const resumes = Object.fromEntries(
+        candidateList.filter((c) => c.id && c.resume).map((c) => [c.id, c.resume])
+      );
 
       const { task_id } = await submitAITask({
         job_id: selectedJob.job_id || selectedJob.id,
         recruiter_id: recruiterId,
         candidate_ids,
+        resumes,
         trace_id: `trace-${Date.now()}`,
       });
 
@@ -149,13 +150,43 @@ export default function AIRequest() {
           )}
 
           {/* Candidate IDs */}
-          <label style={s.label}>2. Candidate IDs (optional — comma separated)</label>
-          <input
-            style={{ ...s.input, marginBottom: "24px" }}
-            placeholder="e.g. user-001, user-002, user-003"
-            value={candidateIds}
-            onChange={(e) => setCandidateIds(e.target.value)}
-          />
+          {/* Candidates + Resumes */}
+<label style={s.label}>2. Candidates & Resumes</label>
+<div style={{ marginBottom: "24px" }}>
+  {candidateList.map((c, i) => (
+    <div key={i} style={{ border: `1px solid ${brand.border}`, borderRadius: "10px", padding: "14px 16px", marginBottom: "10px" }}>
+      <div style={{ fontWeight: 700, fontSize: "13px", color: brand.text, marginBottom: "6px" }}>
+        Candidate {i + 1}
+      </div>
+      <input
+        style={{ ...s.input, marginBottom: "8px" }}
+        placeholder="Candidate ID (e.g. user-001)"
+        value={c.id}
+        onChange={(e) => {
+          const updated = [...candidateList];
+          updated[i] = { ...updated[i], id: e.target.value };
+          setCandidateList(updated);
+        }}
+      />
+      <textarea
+        style={{ ...s.input, minHeight: "90px", resize: "vertical", lineHeight: 1.6 }}
+        placeholder="Paste resume text here (optional — falls back to mock data)..."
+        value={c.resume}
+        onChange={(e) => {
+          const updated = [...candidateList];
+          updated[i] = { ...updated[i], resume: e.target.value };
+          setCandidateList(updated);
+        }}
+      />
+    </div>
+  ))}
+  <button
+    style={{ ...s.secondaryBtn, marginTop: "6px" }}
+    onClick={() => setCandidateList([...candidateList, { id: "", resume: "" }])}
+  >
+    + Add Candidate
+  </button>
+</div>
 
           {/* Actions */}
           <div>

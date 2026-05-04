@@ -1,10 +1,10 @@
 const AI_BASE = "http://localhost:8006";
 
-export async function submitAITask({ job_id, recruiter_id, candidate_ids, trace_id }) {
+export async function submitAITask({ job_id, recruiter_id, candidate_ids, resumes, trace_id }) {
   const res = await fetch(`${AI_BASE}/ai/submit`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ job_id, recruiter_id, candidate_ids, trace_id }),
+    body: JSON.stringify({ job_id, recruiter_id, candidate_ids, resumes, trace_id }),
   });
   if (!res.ok) throw new Error("Failed to submit AI task");
   return res.json();

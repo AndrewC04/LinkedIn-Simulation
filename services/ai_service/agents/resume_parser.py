@@ -1,107 +1,87 @@
-# agents/resume_parser.py — Resume Parser skill
+# agents/resume_parser.py — Resume Parser skill (LLM-powered)
 
-import re
+import json
+import os
+from openai import OpenAI
 from models.schemas import ResumeParserRequest, ParsedResume
 from db.mongo import log_trace
 
-# ── Skill & Experience Keywords ───────────────────────────────────────────────
-
-KNOWN_SKILLS = [
-    # Languages
-    "python", "java", "javascript", "typescript", "c++", "c#", "go", "rust",
-    "scala", "kotlin", "swift", "r", "sql", "bash",
-    # Frameworks & Libraries
-    "fastapi", "django", "flask", "react", "node.js", "spring", "kafka",
-    "spark", "pytorch", "tensorflow", "scikit-learn", "pandas", "numpy",
-    # Infrastructure & Tools
-    "docker", "kubernetes", "aws", "gcp", "azure", "mongodb", "postgresql",
-    "mysql", "redis", "git", "ci/cd", "linux",
-    # Concepts
-    "machine learning", "deep learning", "nlp", "data engineering",
-    "distributed systems", "microservices", "restful apis", "agile"
-]
-
-EDUCATION_KEYWORDS = [
-    "b.s.", "b.sc", "bachelor", "m.s.", "m.sc", "master", "phd", "ph.d",
-    "mba", "associate", "degree", "university", "college", "institute",
-    "computer science", "data science", "engineering", "mathematics"
-]
-
-ROLE_KEYWORDS = [
-    "engineer", "developer", "scientist", "analyst", "architect", "manager",
-    "lead", "intern", "consultant", "director", "vp", "head of"
-]
-
-YEAR_PATTERN = re.compile(r'\b(19|20)\d{2}\b')
-
-
-# ── Parser Logic ──────────────────────────────────────────────────────────────
-
-def extract_skills(text: str) -> list[str]:
-    text_lower = text.lower()
-    return [skill for skill in KNOWN_SKILLS if skill in text_lower]
-
-
-def extract_education(text: str) -> list[str]:
-    lines = text.split("\n")
-    results = []
-    for line in lines:
-        line_lower = line.lower()
-        if any(kw in line_lower for kw in EDUCATION_KEYWORDS):
-            cleaned = line.strip()
-            if cleaned and cleaned not in results:
-                results.append(cleaned)
-    return results[:5]  # cap at 5
-
-
-def extract_roles(text: str) -> list[str]:
-    lines = text.split("\n")
-    results = []
-    for line in lines:
-        line_lower = line.lower()
-        if any(kw in line_lower for kw in ROLE_KEYWORDS):
-            cleaned = line.strip()
-            if cleaned and cleaned not in results:
-                results.append(cleaned)
-    return results[:8]  # cap at 8
-
-
-def estimate_experience(text: str) -> float:
-    years = [int(y) for y in YEAR_PATTERN.findall(text)]
-    if len(years) < 2:
-        return 0.0
-    return float(max(years) - min(years))
-
-
-# ── Main Entry Point ──────────────────────────────────────────────────────────
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def parse_resume(request: ResumeParserRequest, trace_id: str) -> ParsedResume:
     """
-    Parse raw resume text and return structured fields.
-    Logs each step to MongoDB for observability.
+    Parse raw resume text using GPT-4o-mini for structured extraction.
+    Falls back to keyword matching if OpenAI is unavailable.
     """
     text = request.resume_text
 
-    skills      = extract_skills(text)
-    education   = extract_education(text)
-    roles       = extract_roles(text)
-    years_exp   = estimate_experience(text)
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=0,
+            response_format={"type": "json_object"},
+            messages=[{
+                "role": "system",
+                "content": "You are a resume parser. Extract structured data from resumes and return only valid JSON."
+            }, {
+                "role": "user",
+                "content": f"""Parse this resume and return JSON with these exact keys:
+- skills: list of technical skills (normalize to lowercase, expand abbreviations e.g. "ML" → "machine learning")
+- years_of_experience: float (calculate from date ranges, 0.0 if unclear)
+- education: list of strings (degree + institution)
+- previous_roles: list of strings (job title + company)
 
-    result = ParsedResume(
-        member_id=request.member_id,
-        skills=skills,
-        years_of_experience=years_exp,
-        education=education,
-        previous_roles=roles
-    )
+Resume:
+{text}"""
+            }]
+        )
 
-    # Log trace step to MongoDB
+        parsed = json.loads(response.choices[0].message.content)
+
+        result = ParsedResume(
+            member_id=request.member_id,
+            skills=parsed.get("skills", []),
+            years_of_experience=float(parsed.get("years_of_experience", 0.0)),
+            education=parsed.get("education", []),
+            previous_roles=parsed.get("previous_roles", [])
+        )
+
+    except Exception as e:
+        # Fallback to basic keyword extraction if OpenAI fails
+        log_trace(trace_id, "resume_parser_fallback", {"error": str(e)})
+        result = _fallback_parse(request)
+
     log_trace(trace_id=trace_id, step="resume_parsed", data={
-        "member_id":          request.member_id,
-        "skills_found":       skills,
-        "years_of_experience": years_exp,
-        "education_entries":  len(education),
-        "roles_found":        len(roles)
+        "member_id":           request.member_id,
+        "skills_found":        result.skills,
+        "years_of_experience": result.years_of_experience,
+        "education_entries":   len(result.education),
+        "roles_found":         len(result.previous_roles)
     })
 
     return result
+
+
+def _fallback_parse(request: ResumeParserRequest) -> ParsedResume:
+    """Basic keyword fallback if LLM is unavailable."""
+    import re
+    KNOWN_SKILLS = [
+        "python", "java", "javascript", "typescript", "go", "rust", "scala",
+        "sql", "bash", "fastapi", "django", "flask", "react", "kafka", "spark",
+        "pytorch", "tensorflow", "scikit-learn", "docker", "kubernetes", "aws",
+        "gcp", "azure", "mongodb", "postgresql", "redis", "machine learning",
+        "deep learning", "nlp", "microservices"
+    ]
+    text = request.resume_text
+    text_lower = text.lower()
+    skills = [s for s in KNOWN_SKILLS if s in text_lower]
+    years = [int(y) for y in re.findall(r'\b(19|20)\d{2}\b', text)]
+    yoe = float(max(years) - min(years)) if len(years) >= 2 else 0.0
+
+    return ParsedResume(
+        member_id=request.member_id,
+        skills=skills,
+        years_of_experience=yoe,
+        education=[],
+        previous_roles=[]
+    )

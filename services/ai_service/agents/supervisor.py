@@ -1,6 +1,8 @@
 # agents/supervisor.py — Hiring Assistant supervisor agent
 
 import asyncio
+import os
+from openai import OpenAI
 from models.schemas import (
     ResumeParserRequest, JobMatchRequest,
     SupervisorResult, ShortlistedCandidate
@@ -8,6 +10,8 @@ from models.schemas import (
 from agents.resume_parser import parse_resume
 from agents.job_matcher import match_candidate
 from db.mongo import update_task_status, log_trace
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Minimum match score to be shortlisted
 SHORTLIST_THRESHOLD = 0.4
@@ -52,35 +56,58 @@ MOCK_RESUMES = {
 # Mock job store — in production this comes from Job Service (:8002)
 MOCK_JOBS = {
     "job001": {
-        "title":            "Senior Data Engineer",
-        "skills_required":  ["python", "kafka", "spark", "aws", "mongodb"],
-        "seniority_level":  "senior",
-        "location":         "San Francisco, CA"
+        "title":           "Senior Data Engineer",
+        "skills_required": ["python", "kafka", "spark", "aws", "mongodb"],
+        "seniority_level": "senior",
+        "location":        "San Francisco, CA"
     },
     "job002": {
-        "title":            "ML Engineer",
-        "skills_required":  ["python", "machine learning", "deep learning", "pytorch", "aws"],
-        "seniority_level":  "mid",
-        "location":         "Remote"
+        "title":           "ML Engineer",
+        "skills_required": ["python", "machine learning", "deep learning", "pytorch", "aws"],
+        "seniority_level": "mid",
+        "location":        "Remote"
     },
     "job003": {
-        "title":            "Backend Engineer",
-        "skills_required":  ["python", "fastapi", "docker", "mongodb", "kafka"],
-        "seniority_level":  "mid",
-        "location":         "New York, NY"
+        "title":           "Backend Engineer",
+        "skills_required": ["python", "fastapi", "docker", "mongodb", "kafka"],
+        "seniority_level": "mid",
+        "location":        "New York, NY"
     }
 }
 
 
-# ── Outreach Draft Generator ──────────────────────────────────────────────────
+# ── Outreach Draft Generator (LLM-powered) ────────────────────────────────────
 
-def generate_outreach(candidate_name: str, job_title: str, matched_skills: list[str]) -> str:
-    skills_str = ", ".join(matched_skills[:3]) if matched_skills else "your background"
-    return (
-        f"Hi {candidate_name}, I came across your profile and was impressed by your "
-        f"experience with {skills_str}. We have an exciting {job_title} opportunity "
-        f"that aligns well with your background. Would you be open to a quick chat?"
-    )
+def generate_outreach(
+    candidate_name: str,
+    job_title: str,
+    matched_skills: list[str],
+    previous_roles: list[str]
+) -> str:
+    skills_str = ", ".join(matched_skills[:5]) if matched_skills else "your background"
+    roles_str  = previous_roles[0] if previous_roles else "your recent role"
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            max_tokens=150,
+            messages=[{
+                "role": "user",
+                "content": f"""Write a short, warm LinkedIn recruiter outreach message (under 100 words).
+Candidate: {candidate_name}
+Their most recent role: {roles_str}
+Their key skills: {skills_str}
+Role we're hiring for: {job_title}
+Make it specific to their background, not generic."""
+            }]
+        )
+        return response.choices[0].message.content.strip()
+    except Exception:
+        skills_str = ", ".join(matched_skills[:3]) if matched_skills else "your background"
+        return (
+            f"Hi {candidate_name}, I came across your profile and was impressed by your "
+            f"experience with {skills_str}. We have an exciting {job_title} opportunity "
+            f"that aligns well with your background. Would you be open to a quick chat?"
+        )
 
 
 # ── Supervisor Pipeline ───────────────────────────────────────────────────────
@@ -97,7 +124,7 @@ async def run_supervisor(
     2. Fetch job details
     3. For each candidate: parse resume → match to job
     4. Shortlist candidates above threshold
-    5. Generate outreach drafts
+    5. Generate outreach drafts (LLM)
     6. Update task status to 'awaiting_approval'
     """
 
@@ -122,10 +149,13 @@ async def run_supervisor(
     for candidate_id in candidate_ids:
         resume_text = MOCK_RESUMES.get(candidate_id)
         if not resume_text:
-            log_trace(trace_id, "candidate_skipped", {"candidate_id": candidate_id, "reason": "no resume"})
+            log_trace(trace_id, "candidate_skipped", {
+                "candidate_id": candidate_id,
+                "reason": "no resume"
+            })
             continue
 
-        # Parse resume
+        # Parse resume (LLM-powered)
         parse_request = ResumeParserRequest(
             member_id=candidate_id,
             resume_text=resume_text
@@ -133,10 +163,9 @@ async def run_supervisor(
         parsed = parse_resume(parse_request, trace_id)
         update_task_status(task_id=task_id, status="running", step=f"resume_parsed:{candidate_id}")
 
-        # Small delay to simulate async processing
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.3)
 
-        # Match to job
+        # Match to job (embedding-powered)
         match_request = JobMatchRequest(
             parsed_resume=parsed,
             job_id=job_id,
@@ -153,7 +182,8 @@ async def run_supervisor(
             outreach = generate_outreach(
                 candidate_name=candidate_id,
                 job_title=job["title"],
-                matched_skills=match_result.matched_skills
+                matched_skills=match_result.matched_skills,
+                previous_roles=parsed.previous_roles
             )
             shortlisted.append(ShortlistedCandidate(
                 member_id=candidate_id,
