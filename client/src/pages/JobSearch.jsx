@@ -6,11 +6,11 @@ import JobFilters from "../components/JobFilters.jsx";
 import { searchJobs } from "../api/jobApi.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 
-const SAVED_JOBS_KEY = "savedJobs";
 
 export default function JobSearch() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const SAVED_JOBS_KEY = `savedJobs_${user?.userId || 'guest'}`;
 
   const [filters, setFilters] = useState({
     keyword: "",
@@ -60,16 +60,22 @@ export default function JobSearch() {
       work_mode: "",
     });
   }
-
-  function toggleSave(job) {
+  async function toggleSave(job) {
     let next;
     const exists = savedJobs.some((j) => j.job_id === job.job_id);
-
     if (exists) next = savedJobs.filter((j) => j.job_id !== job.job_id);
     else next = [...savedJobs, job];
-
     setSavedJobs(next);
     localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(next));
+    if (!exists) {
+      try {
+        await fetch("http://127.0.0.1:8002/jobs/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ job_id: job.job_id, member_id: user?.userId }),
+        });
+      } catch {}
+    }
   }
 
   function handleApply(jobId) {

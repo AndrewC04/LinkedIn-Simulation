@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="LinkedIn Simulation Performance Test v2" enabled="true">
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="THREADS" elementType="Argument">
+            <stringProp name="Argument.name">THREADS</stringProp>
+            <stringProp name="Argument.value">100</stringProp>
+          </elementProp>
+          <elementProp name="RAMPUP" elementType="Argument">
+            <stringProp name="Argument.name">RAMPUP</stringProp>
+            <stringProp name="Argument.value">10</stringProp>
+          </elementProp>
+          <elementProp name="DURATION" elementType="Argument">
+            <stringProp name="Argument.name">DURATION</stringProp>
+            <stringProp name="Argument.value">60</stringProp>
+          </elementProp>
+          <elementProp name="HOST_JOBS" elementType="Argument">
+            <stringProp name="Argument.name">HOST_JOBS</stringProp>
+            <stringProp name="Argument.value">localhost</stringProp>
+          </elementProp>
+          <elementProp name="PORT_JOBS" elementType="Argument">
+            <stringProp name="Argument.name">PORT_JOBS</stringProp>
+            <stringProp name="Argument.value">8002</stringProp>
+          </elementProp>
+          <elementProp name="HOST_ANALYTICS" elementType="Argument">
+            <stringProp name="Argument.name">HOST_ANALYTICS</stringProp>
+            <stringProp name="Argument.value">localhost</stringProp>
+          </elementProp>
+          <elementProp name="PORT_ANALYTICS" elementType="Argument">
+            <stringProp name="Argument.name">PORT_ANALYTICS</stringProp>
+            <stringProp name="Argument.value">8005</stringProp>
+          </elementProp>
+          <elementProp name="AUTH_TOKEN" elementType="Argument">
+            <stringProp name="Argument.name">AUTH_TOKEN</stringProp>
+            <stringProp name="Argument.value">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtZW1fZjhhMWY5MDciLCJyb2xlIjoibWVtYmVyIiwiZW1haWwiOiJuaXNodW1AZ21haWwuY29tIiwiZXhwIjoxNzc4MDExMTAyfQ.tyyiXOBPHzVvl55_8wIE4d05-gChakyAv5lKSY5QYqU</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+    </TestPlan>
+    <hashTree>
+      <!-- CSV for job IDs -->
+      <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Job IDs CSV">
+        <stringProp name="filename">job_ids.csv</stringProp>
+        <stringProp name="fileEncoding">UTF-8</stringProp>
+        <stringProp name="variableNames">job_id</stringProp>
+        <boolProp name="ignoreFirstLine">false</boolProp>
+        <stringProp name="delimiter">,</stringProp>
+        <boolProp name="quotedData">false</boolProp>
+        <boolProp name="recycle">true</boolProp>
+        <boolProp name="stopThread">false</boolProp>
+        <stringProp name="shareMode">shareMode.all</stringProp>
+      </CSVDataSet>
+      <hashTree/>
+
+      <!-- SCENARIO A: Job Search + Detail View -->
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Scenario A - Job Search and Detail View" enabled="true">
+        <stringProp name="ThreadGroup.num_threads">${THREADS}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${RAMPUP}</stringProp>
+        <stringProp name="ThreadGroup.duration">${DURATION}</stringProp>
+        <longProp name="ThreadGroup.delay">0</longProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <boolProp name="ThreadGroup.scheduler">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController">
+          <intProp name="LoopController.loops">-1</intProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+      </ThreadGroup>
+      <hashTree>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Set Random Page" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="script">vars.put("rand_page", String.valueOf((int)(Math.random() * 50) + 1))</stringProp>
+        </JSR223PreProcessor>
+        <hashTree/>
+        <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="JSON Header" enabled="true">
+          <collectionProp name="HeaderManager.headers">
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Content-Type</stringProp>
+              <stringProp name="Header.value">application/json</stringProp>
+            </elementProp>
+          </collectionProp>
+        </HeaderManager>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="A1 - POST /jobs/search" enabled="true">
+          <stringProp name="HTTPSampler.domain">${HOST_JOBS}</stringProp>
+          <stringProp name="HTTPSampler.port">${PORT_JOBS}</stringProp>
+          <stringProp name="HTTPSampler.protocol">http</stringProp>
+          <stringProp name="HTTPSampler.path">/jobs/search</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <stringProp name="Argument.value">{"filters": {}, "pagination": {"page": ${rand_page}, "page_size": 20}}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+        </HTTPSamplerProxy>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="A2 - POST /jobs/get" enabled="true">
+          <stringProp name="HTTPSampler.domain">${HOST_JOBS}</stringProp>
+          <stringProp name="HTTPSampler.port">${PORT_JOBS}</stringProp>
+          <stringProp name="HTTPSampler.protocol">http</stringProp>
+          <stringProp name="HTTPSampler.path">/jobs/get</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <stringProp name="Argument.value">{"job_id": "${job_id}", "actor_id": "mem_f8a1f907"}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+        </HTTPSamplerProxy>
+        <hashTree/>
+        <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Think Time">
+          <stringProp name="ConstantTimer.delay">100</stringProp>
+        </ConstantTimer>
+        <hashTree/>
+        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Scenario A Summary">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="SampleSaveConfiguration">
+              <time>true</time>
+              <latency>true</latency>
+              <timestamp>true</timestamp>
+              <success>true</success>
+              <label>true</label>
+              <code>true</code>
+              <message>true</message>
+              <threadName>true</threadName>
+              <dataType>true</dataType>
+              <encoding>false</encoding>
+              <assertions>true</assertions>
+              <subresults>true</subresults>
+              <responseData>false</responseData>
+              <samplerData>false</samplerData>
+              <xml>false</xml>
+              <fieldNames>true</fieldNames>
+              <responseHeaders>false</responseHeaders>
+              <requestHeaders>false</requestHeaders>
+              <responseDataOnError>false</responseDataOnError>
+              <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+              <assertionsResultsToSave>0</assertionsResultsToSave>
+              <bytes>true</bytes>
+              <sentBytes>true</sentBytes>
+              <url>true</url>
+              <threadCounts>true</threadCounts>
+              <idleTime>true</idleTime>
+              <connectTime>true</connectTime>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+      </hashTree>
+
+      <!-- SCENARIO B: Analytics Write + Job Search (write-heavy, no auth needed) -->
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Scenario B - Analytics Ingest and Job Write" enabled="true">
+        <stringProp name="ThreadGroup.num_threads">${THREADS}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${RAMPUP}</stringProp>
+        <stringProp name="ThreadGroup.duration">${DURATION}</stringProp>
+        <longProp name="ThreadGroup.delay">0</longProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <boolProp name="ThreadGroup.scheduler">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController">
+          <intProp name="LoopController.loops">-1</intProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+      </ThreadGroup>
+      <hashTree>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Generate Trace ID" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="script">vars.put("trace_id", UUID.randomUUID().toString()); vars.put("idem_key", UUID.randomUUID().toString())</stringProp>
+        </JSR223PreProcessor>
+        <hashTree/>
+        <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="JSON Header" enabled="true">
+          <collectionProp name="HeaderManager.headers">
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Content-Type</stringProp>
+              <stringProp name="Header.value">application/json</stringProp>
+            </elementProp>
+          </collectionProp>
+        </HeaderManager>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="B1 - POST /events/ingest" enabled="true">
+          <stringProp name="HTTPSampler.domain">${HOST_ANALYTICS}</stringProp>
+          <stringProp name="HTTPSampler.port">${PORT_ANALYTICS}</stringProp>
+          <stringProp name="HTTPSampler.protocol">http</stringProp>
+          <stringProp name="HTTPSampler.path">/events/ingest</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <stringProp name="Argument.value">{"event_type": "job.viewed", "trace_id": "${trace_id}", "timestamp": "2026-05-04T12:00:00Z", "actor_id": "mem_f8a1f907", "entity": {"entity_type": "job", "entity_id": "${job_id}"}, "payload": {"job_id": "${job_id}"}, "idempotency_key": "${idem_key}"}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+        </HTTPSamplerProxy>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="B2 - POST /jobs/search" enabled="true">
+          <stringProp name="HTTPSampler.domain">${HOST_JOBS}</stringProp>
+          <stringProp name="HTTPSampler.port">${PORT_JOBS}</stringProp>
+          <stringProp name="HTTPSampler.protocol">http</stringProp>
+          <stringProp name="HTTPSampler.path">/jobs/search</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <stringProp name="Argument.value">{"filters": {"keyword": "engineer"}, "pagination": {"page": 1, "page_size": 20}}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+        </HTTPSamplerProxy>
+        <hashTree/>
+        <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Think Time">
+          <stringProp name="ConstantTimer.delay">100</stringProp>
+        </ConstantTimer>
+        <hashTree/>
+        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Scenario B Summary">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="SampleSaveConfiguration">
+              <time>true</time>
+              <latency>true</latency>
+              <timestamp>true</timestamp>
+              <success>true</success>
+              <label>true</label>
+              <code>true</code>
+              <message>true</message>
+              <threadName>true</threadName>
+              <dataType>true</dataType>
+              <encoding>false</encoding>
+              <assertions>true</assertions>
+              <subresults>true</subresults>
+              <responseData>false</responseData>
+              <samplerData>false</samplerData>
+              <xml>false</xml>
+              <fieldNames>true</fieldNames>
+              <responseHeaders>false</responseHeaders>
+              <requestHeaders>false</requestHeaders>
+              <responseDataOnError>false</responseDataOnError>
+              <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+              <assertionsResultsToSave>0</assertionsResultsToSave>
+              <bytes>true</bytes>
+              <sentBytes>true</sentBytes>
+              <url>true</url>
+              <threadCounts>true</threadCounts>
+              <idleTime>true</idleTime>
+              <connectTime>true</connectTime>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+      </hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>

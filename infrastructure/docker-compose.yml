@@ -98,7 +98,6 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: redispassword
-
     ports:
       - "8004:8004"
     command: uvicorn main:app --host 0.0.0.0 --port 8004
@@ -272,6 +271,31 @@ services:
     ports:
       - "8005:8005"
 
+  # ── Analytics worker (standalone Kafka consumer) ──
+  analytics-worker:
+    build:
+      context: ..
+      dockerfile: services/analytics-service/Dockerfile
+    container_name: analytics-worker
+    depends_on:
+      - kafka
+      - mysql
+      - mongodb
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: linkedin_db
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+      MONGO_HOST: mongodb
+      MONGO_PORT: 27017
+      MONGO_DATABASE: linkedin_events
+      MONGO_USER: root
+      MONGO_PASSWORD: rootpassword
+    command: python consumer.py
+
   # ── AI API (P8) ──
   ai-api:
     build:
@@ -283,6 +307,7 @@ services:
       - mongodb
     environment:
       KAFKA_BROKER: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_TOPIC_REQUESTS: ai.requests
       KAFKA_TOPIC_RESULTS: ai.results
       MONGO_HOST: mongodb

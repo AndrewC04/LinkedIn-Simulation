@@ -1,18 +1,21 @@
 import React, { useEffect, useState } from "react";
+import { useAuth } from "../auth/AuthContext.jsx";
 import { Link, useNavigate } from "react-router-dom";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import JobCard from "../components/JobCard.jsx";
 
-const SAVED_JOBS_KEY = "savedJobs";
+const SAVED_JOBS_KEY_BASE = "savedJobs";
 
 export default function SavedJobs() {
+  const { user } = useAuth();
+  const SAVED_JOBS_KEY = `savedJobs_${user?.userId || 'guest'}`;
   const navigate = useNavigate();
   const [savedJobs, setSavedJobs] = useState([]);
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem(SAVED_JOBS_KEY) || "[]");
     setSavedJobs(saved);
-  }, []);
+  }, [user]);
 
   function toggleSave(job) {
     const next = savedJobs.filter((j) => j.job_id !== job.job_id);

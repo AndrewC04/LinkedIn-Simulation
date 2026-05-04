@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  job-api:
+    environment:
+      REDIS_ENABLED: "true"
+      KAFKA_ENABLED: "false"
+  application-api:
+    environment:
+      ENABLE_KAFKA: "false"

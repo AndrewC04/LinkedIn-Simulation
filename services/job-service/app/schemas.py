@@ -187,3 +187,13 @@ class StandardErrorResponse(BaseModel):
 class GenericSuccessResponse(BaseModel):
     message: str
     data: Dict[str, Any]
+
+class JobSaveRequest(BaseModel):
+    job_id: str
+    member_id: str
+
+
+class JobSaveResponse(BaseModel):
+    job_id: str
+    member_id: str
+    message: str

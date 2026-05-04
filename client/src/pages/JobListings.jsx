@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../auth/AuthContext.jsx";
 import { brand } from "../styles/theme.js";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import LeftProfileRail from "../components/LeftProfileRail.jsx";
 import RightNewsRail from "../components/RightNewsRail.jsx";
 
 export default function JobListings({ onNavigate }) {
+  const { user } = useAuth();
+  const SAVED_JOBS_KEY = `savedJobs_${user?.userId || 'guest'}`;
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -70,7 +73,7 @@ export default function JobListings({ onNavigate }) {
   };
 
   const handleSaveJob = (job) => {
-    const existing = JSON.parse(localStorage.getItem("savedJobs") || "[]");
+    const existing = JSON.parse(localStorage.getItem(SAVED_JOBS_KEY) || "[]");
     const jobId = job.job_id || job.id;
     if (existing.some((j) => (j.job_id || j.id) === jobId)) {
       notify("Job already saved.");
@@ -87,7 +90,7 @@ export default function JobListings({ onNavigate }) {
       skills_required: job.skills_required,
       saved_at: new Date().toISOString(),
     };
-    localStorage.setItem("savedJobs", JSON.stringify([savedJob, ...existing]));
+    localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify([savedJob, ...existing]));
     notify("Job saved.");
   };
 

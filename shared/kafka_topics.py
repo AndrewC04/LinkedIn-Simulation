@@ -14,6 +14,9 @@ class Topics:
     JOB_VIEWED              = "job.viewed"
     JOB_SAVED               = "job.saved"
     JOB_APPLIED             = "job.applied"
+    JOB_CREATED             = "job.created"
+    JOB_UPDATED             = "job.updated"
+    JOB_CLOSED              = "job.closed"
 
     # Application events (produced by Application Service)
     APPLICATION_SUBMITTED   = "application.submitted"
@@ -25,10 +28,12 @@ class Topics:
     # Connections (produced by Connections Service)
     CONNECTION_REQUESTED    = "connection.requested"
     CONNECTION_ACCEPTED     = "connection.accepted"
+    CONNECTION_REJECTED     = "connection.rejected"
+    PROFILE_VIEWED          = "profile.viewed"
 
     # AI orchestration (produced by FastAPI AI Service / Hiring Agent)
     AI_REQUESTS             = "ai.requests"
     AI_RESULTS              = "ai.results"
 
-    # Analytics ingestion (consumed by Analytics Service)
+    # Analytics ingestion (catch-all)
     ANALYTICS_EVENTS        = "analytics.events"

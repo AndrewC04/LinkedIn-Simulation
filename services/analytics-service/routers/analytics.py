@@ -26,6 +26,7 @@ try:
     redis_client = redis.Redis(
         host=RedisConfig.HOST,
         port=RedisConfig.PORT,
+        password=RedisConfig.PASSWORD,
         decode_responses=True
     )
     redis_client.ping()
@@ -217,11 +218,16 @@ async def member_dashboard(req: MemberDashboardRequest):
 
         pipeline = [
             {"$match": {
-                "event_type": "application.status_updated",
+                "event_type": "application.status.updated",
                 "payload.member_id": req.member_id,
             }},
+            {"$sort": {"timestamp": -1}},
             {"$group": {
-                "_id": "$payload.new_status",
+                "_id": "$payload.application_id",
+                "latest_status": {"$first": "$payload.new_status"}
+            }},
+            {"$group": {
+                "_id": "$latest_status",
                 "count": {"$sum": 1}
             }},
             {"$project": {"status": "$_id", "count": 1, "_id": 0}}

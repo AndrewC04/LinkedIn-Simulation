@@ -247,7 +247,7 @@ def update_status(
     )
 
     emit_event(
-        event_type="application.status_updated",
+        event_type="application.status.updated",
         actor_id=user.user_id,
         entity_type="application",
         entity_id=application.application_id,

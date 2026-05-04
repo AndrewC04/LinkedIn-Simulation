@@ -3,7 +3,11 @@ from datetime import datetime, timezone
 import uuid
 import json
 import os
+import logging
 
+logger = logging.getLogger(__name__)
+
+KAFKA_ENABLED = os.getenv("ENABLE_KAFKA", "false").lower() == "true"
 KAFKA_BROKER = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 
 _producer = None
@@ -11,7 +15,10 @@ _producer = None
 def get_producer():
     global _producer
     if _producer is None:
-        _producer = Producer({"bootstrap.servers": KAFKA_BROKER, "acks": "all"})
+        _producer = Producer({
+            "bootstrap.servers": KAFKA_BROKER,
+            "acks": "all",
+        })
     return _producer
 
 TOPIC_MAP = {
@@ -29,6 +36,11 @@ def emit_event(event_type: str, actor_id: str, entity_type: str, entity_id: str,
         "payload": payload,
         "idempotency_key": str(uuid.uuid4()),
     }
+
+    if not KAFKA_ENABLED:
+        logger.info("[kafka] Kafka disabled, skipped event: %s", event_type)
+        return
+
     topic = TOPIC_MAP.get(event_type, event_type)
     try:
         producer = get_producer()
@@ -38,6 +50,6 @@ def emit_event(event_type: str, actor_id: str, entity_type: str, entity_id: str,
             value=json.dumps(event).encode("utf-8"),
         )
         producer.flush()
-        print(f"[kafka] Published: {event_type} -> topic: {topic}")
+        logger.info("[kafka] Published: %s -> topic: %s", event_type, topic)
     except Exception as e:
-        print(f"[kafka] ERROR: {e}")
+        logger.warning("[kafka] ERROR publishing %s: %s", event_type, e)

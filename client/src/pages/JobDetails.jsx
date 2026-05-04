@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useAuth } from "../auth/AuthContext.jsx";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import { getJob } from "../api/jobApi.js";
 
-const SAVED_JOBS_KEY = "savedJobs";
+
 
 function formatSalary(salaryRange) {
   if (!salaryRange?.min && !salaryRange?.max) return "Salary not listed";
@@ -20,6 +21,8 @@ function formatSalary(salaryRange) {
 }
 
 export default function JobDetails() {
+  const { user } = useAuth();
+  const SAVED_JOBS_KEY = `savedJobs_${user?.userId || 'guest'}`;
   const { jobId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
