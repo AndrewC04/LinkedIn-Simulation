@@ -69,6 +69,7 @@ def _job_search_item(job: Job, company_name: str | None = None) -> dict:
             else None
         ),
         "posted_datetime": job.posted_datetime.isoformat() if job.posted_datetime else None,
+        "views_count": job.views_count,
         "applicants_count": job.applicants_count,
         "status": job.status,
     }
@@ -189,6 +190,9 @@ def get_job(db: Session, job_id: str, increment_view: bool = False) -> dict:
         job.views_count += 1
         db.commit()
         db.refresh(job)
+        # Invalidate search cache so listing reflects updated view count immediately
+        for key in redis_client.scan_iter("job_search:*"):
+            redis_client.delete(key)
 
     result = _job_to_dict(job, company_name=company_name)
     _cache_set(cache_key, result, JOB_CACHE_TTL)

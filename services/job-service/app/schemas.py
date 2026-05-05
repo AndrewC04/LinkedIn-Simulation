@@ -162,6 +162,7 @@ class JobSearchItem(BaseModel):
     skills_required: List[str]
     salary_range: Optional[SalaryRange] = None
     posted_datetime: Optional[str] = None
+    views_count: int
     applicants_count: int
     status: str
 
@@ -187,6 +188,7 @@ class StandardErrorResponse(BaseModel):
 class GenericSuccessResponse(BaseModel):
     message: str
     data: Dict[str, Any]
+
 
 class JobSaveRequest(BaseModel):
     job_id: str
