@@ -52,9 +52,11 @@ jobs:
         run: |
           aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
 
-      - name: Rollout restart all deployments
+      - name: Rollout restart app deployments
         run: |
-          kubectl rollout restart deployment -n linkedin
+          for svc in profile-api job-api application-api messaging-api analytics-api connection-api ai-api analytics-worker frontend; do
+            kubectl rollout restart deployment/$svc -n linkedin || true
+          done
           kubectl rollout status deployment -n linkedin --timeout=300s
 
       - name: Create Kafka topics
