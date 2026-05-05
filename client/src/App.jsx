@@ -29,7 +29,7 @@ const CreateJob = lazy(() => import("./pages/CreateJob.jsx"));
 const EditJob = lazy(() => import("./pages/EditJob.jsx"));
 
 const AnalyticsDashboard = lazy(() => import("./pages/AnalyticsDashboard.jsx"));
-const AIRequest = lazy(() => import("./pages/AIRequest.jsx"));
+const AIRequest = lazy(() => import("./pages/AiRequest.jsx"));
 const AIReview = lazy(() => import("./pages/AIReview.jsx"));
 
 
