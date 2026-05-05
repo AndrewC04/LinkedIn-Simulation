@@ -5,7 +5,6 @@ import shutil
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app import crud
@@ -88,13 +87,12 @@ def submit_application(
     # Increment applicants_count on the job
     try:
         db.execute(
-            text("UPDATE jobs SET applicants_count = applicants_count + 1 WHERE job_id = :job_id"),
+            __import__('sqlalchemy').text("UPDATE jobs SET applicants_count = applicants_count + 1 WHERE job_id = :job_id"),
             {"job_id": job_id}
         )
         db.commit()
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning("Failed to increment applicants_count: %s", e)
+    except Exception:
+        pass
 
     emit_event(
         event_type="application.submitted",

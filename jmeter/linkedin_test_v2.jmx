@@ -20,7 +20,7 @@
           </elementProp>
           <elementProp name="HOST_JOBS" elementType="Argument">
             <stringProp name="Argument.name">HOST_JOBS</stringProp>
-            <stringProp name="Argument.value">localhost</stringProp>
+            <stringProp name="Argument.value">a646a4c5e82b9472997248fb7c128493-a29f34db7d83c969.elb.us-east-2.amazonaws.com</stringProp>
           </elementProp>
           <elementProp name="PORT_JOBS" elementType="Argument">
             <stringProp name="Argument.name">PORT_JOBS</stringProp>
@@ -28,7 +28,7 @@
           </elementProp>
           <elementProp name="HOST_ANALYTICS" elementType="Argument">
             <stringProp name="Argument.name">HOST_ANALYTICS</stringProp>
-            <stringProp name="Argument.value">localhost</stringProp>
+            <stringProp name="Argument.value">a55cb80cd2cbd486ca4773ae0be96669-49a6f0b64a9c73f6.elb.us-east-2.amazonaws.com</stringProp>
           </elementProp>
           <elementProp name="PORT_ANALYTICS" elementType="Argument">
             <stringProp name="Argument.name">PORT_ANALYTICS</stringProp>
@@ -36,7 +36,7 @@
           </elementProp>
           <elementProp name="AUTH_TOKEN" elementType="Argument">
             <stringProp name="Argument.name">AUTH_TOKEN</stringProp>
-            <stringProp name="Argument.value">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtZW1fZjhhMWY5MDciLCJyb2xlIjoibWVtYmVyIiwiZW1haWwiOiJuaXNodW1AZ21haWwuY29tIiwiZXhwIjoxNzc4MDExMTAyfQ.tyyiXOBPHzVvl55_8wIE4d05-gChakyAv5lKSY5QYqU</stringProp>
+            <stringProp name="Argument.value">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtZW1fMmJjMmU4ZWYiLCJyb2xlIjoibWVtYmVyIiwiZW1haWwiOiJuaXNodW1AZ21haWwuY29tIiwiZXhwIjoxNzc4MDYyMTA3fQ.6SNwZfV9x5tx-ThSZF--eiksnfLGKlA_uCshP0MJmqc</stringProp>
           </elementProp>
         </collectionProp>
       </elementProp>
