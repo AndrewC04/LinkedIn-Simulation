@@ -115,7 +115,8 @@ spec:
           mountPath: /docker-entrypoint-initdb.d
       volumes:
       - name: mysql-data
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: mysql-pvc
       - name: mysql-init
         configMap:
           name: mysql-init
@@ -164,7 +165,8 @@ spec:
           mountPath: /data/db
       volumes:
       - name: mongo-data
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: mongodb-pvc
 ---
 apiVersion: v1
 kind: Service
