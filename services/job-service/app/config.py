@@ -2,7 +2,9 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
 
+
 load_dotenv()
+
 
 
 class Settings(BaseModel):
@@ -15,7 +17,7 @@ class Settings(BaseModel):
     redis_host: str = os.getenv("REDIS_HOST", "localhost")
     redis_port: int = int(os.getenv("REDIS_PORT", "6379"))
     redis_db: int = int(os.getenv("REDIS_DB", "0"))
-    redis_password: str | None = os.getenv("REDIS_PASSWORD", "redispassword")
+    redis_password: str | None = os.getenv("REDIS_PASSWORD") or None  # ← fixed
 
     kafka_bootstrap_servers: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:29092")
     kafka_enabled: bool = os.getenv("KAFKA_ENABLED", "false").lower() == "true"
@@ -24,13 +26,14 @@ class Settings(BaseModel):
     job_service_port: int = int(os.getenv("JOB_SERVICE_PORT", "8002"))
 
     database_url: str = os.getenv(
-    "DATABASE_URL",
-    "mysql+pymysql://appuser:apppassword@localhost:3306/linkedin_db",
+        "DATABASE_URL",
+        "mysql+pymysql://appuser:apppassword@localhost:3306/linkedin_db",
     )
 
     @property
     def sqlalchemy_url(self) -> str:
         return self.database_url
+
 
 
 settings = Settings()

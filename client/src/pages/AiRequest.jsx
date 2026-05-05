@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext.jsx";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import { submitAITask, getTaskStatus } from "../api/aiApi.js";
-import { recruiterJobs } from "../api/applicationApi.js";
+import { searchJobs } from "../api/jobApi.js";
 
 const brand = {
   blue: "#0a66c2",
@@ -29,9 +29,8 @@ export default function AIRequest() {
   useEffect(() => {
     async function loadJobs() {
       try {
-        const data = await recruiterJobs(recruiterId, null, 1, 20);
-        const jobList = data?.jobs || data?.items || (Array.isArray(data) ? data : []);
-        setJobs(jobList);
+        const data = await searchJobs({ status: "open" }, 1, 20);
+setJobs(data.results || []);
       } catch {
         setError("Failed to load your jobs.");
       }
@@ -58,6 +57,8 @@ export default function AIRequest() {
         resumes,
         trace_id: `trace-${Date.now()}`,
       });
+
+      localStorage.setItem("latest_task_id", task_id); // ← ADDED
 
       setStatusMsg("Task submitted! Waiting for AI pipeline to complete...");
       setPolling(true);
@@ -149,44 +150,43 @@ export default function AIRequest() {
             </div>
           )}
 
-          {/* Candidate IDs */}
           {/* Candidates + Resumes */}
-<label style={s.label}>2. Candidates & Resumes</label>
-<div style={{ marginBottom: "24px" }}>
-  {candidateList.map((c, i) => (
-    <div key={i} style={{ border: `1px solid ${brand.border}`, borderRadius: "10px", padding: "14px 16px", marginBottom: "10px" }}>
-      <div style={{ fontWeight: 700, fontSize: "13px", color: brand.text, marginBottom: "6px" }}>
-        Candidate {i + 1}
-      </div>
-      <input
-        style={{ ...s.input, marginBottom: "8px" }}
-        placeholder="Candidate ID (e.g. user-001)"
-        value={c.id}
-        onChange={(e) => {
-          const updated = [...candidateList];
-          updated[i] = { ...updated[i], id: e.target.value };
-          setCandidateList(updated);
-        }}
-      />
-      <textarea
-        style={{ ...s.input, minHeight: "90px", resize: "vertical", lineHeight: 1.6 }}
-        placeholder="Paste resume text here (optional — falls back to mock data)..."
-        value={c.resume}
-        onChange={(e) => {
-          const updated = [...candidateList];
-          updated[i] = { ...updated[i], resume: e.target.value };
-          setCandidateList(updated);
-        }}
-      />
-    </div>
-  ))}
-  <button
-    style={{ ...s.secondaryBtn, marginTop: "6px" }}
-    onClick={() => setCandidateList([...candidateList, { id: "", resume: "" }])}
-  >
-    + Add Candidate
-  </button>
-</div>
+          <label style={s.label}>2. Candidates & Resumes</label>
+          <div style={{ marginBottom: "24px" }}>
+            {candidateList.map((c, i) => (
+              <div key={i} style={{ border: `1px solid ${brand.border}`, borderRadius: "10px", padding: "14px 16px", marginBottom: "10px" }}>
+                <div style={{ fontWeight: 700, fontSize: "13px", color: brand.text, marginBottom: "6px" }}>
+                  Candidate {i + 1}
+                </div>
+                <input
+                  style={{ ...s.input, marginBottom: "8px" }}
+                  placeholder="Candidate ID (e.g. user-001)"
+                  value={c.id}
+                  onChange={(e) => {
+                    const updated = [...candidateList];
+                    updated[i] = { ...updated[i], id: e.target.value };
+                    setCandidateList(updated);
+                  }}
+                />
+                <textarea
+                  style={{ ...s.input, minHeight: "90px", resize: "vertical", lineHeight: 1.6 }}
+                  placeholder="Paste resume text here (optional — falls back to mock data)..."
+                  value={c.resume}
+                  onChange={(e) => {
+                    const updated = [...candidateList];
+                    updated[i] = { ...updated[i], resume: e.target.value };
+                    setCandidateList(updated);
+                  }}
+                />
+              </div>
+            ))}
+            <button
+              style={{ ...s.secondaryBtn, marginTop: "6px" }}
+              onClick={() => setCandidateList([...candidateList, { id: "", resume: "" }])}
+            >
+              + Add Candidate
+            </button>
+          </div>
 
           {/* Actions */}
           <div>

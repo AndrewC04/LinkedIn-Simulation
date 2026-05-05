@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import JobCard from "../components/JobCard.jsx";
-import { jobsByRecruiter, closeJob } from "../api/jobApi.js";
+import { searchJobs, closeJob } from "../api/jobApi.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 
 export default function RecruiterJobsDashboard() {
@@ -19,7 +19,7 @@ export default function RecruiterJobsDashboard() {
     try {
       setLoading(true);
       setError("");
-      const data = await jobsByRecruiter(recruiterId, statusFilter, 1, 20);
+      const data = await searchJobs({ status: statusFilter }, 1, 20);
       setJobs(data.results || []);
     } catch (err) {
       setJobs([]);

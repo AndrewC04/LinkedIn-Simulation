@@ -4,7 +4,9 @@ import { brand } from "../styles/theme.js";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import LeftProfileRail from "../components/LeftProfileRail.jsx";
 
+
 const TASK_TYPES = ["shortlist", "outreach_draft", "match_score"];
+
 
 const taskColors = {
   shortlist:      { backgroundColor: "#EEF3FB", color: brand.blue },
@@ -19,6 +21,7 @@ const taskColors = {
   failed:         { backgroundColor: "#fef2f2", color: "#dc2626" },
 };
 
+
 const WS_BASE = "ws://ae75bd49118534be2a684f0f71f0564c-fd714fd6cdd0db22.elb.us-east-2.amazonaws.com:8006/ws";
 const API_BASE = "http://ae75bd49118534be2a684f0f71f0564c-fd714fd6cdd0db22.elb.us-east-2.amazonaws.com:8006";
 
@@ -30,11 +33,9 @@ export default function AIReview({ onNavigate }) {
   const [editingId, setEditingId]     = useState(null);
   const [editContent, setEditContent] = useState("");
   const [filter, setFilter]           = useState("all");
-  const [liveStatus, setLiveStatus]   = useState({}); // task_id → { status, steps_completed }
+  const [liveStatus, setLiveStatus]   = useState({});
 
-  // Track open WebSockets so we can clean them up
   const socketRefs = useRef({});
-
   const recruiter_id = "recruiter-001";
 
   const s = {
@@ -75,66 +76,122 @@ export default function AIReview({ onNavigate }) {
                    display: "flex", alignItems: "center", gap: "6px" },
   };
 
+
   const notify = (msg, type = "success") => {
     setMessage({ msg, type });
     setTimeout(() => setMessage(null), 3500);
   };
 
+
+  // ── Helper to extract ai_output from any result shape ─────────────────────
+  const extractOutput = (result, fallback = null) => {
+    if (!result) return fallback;
+    if (typeof result === "string") return result;
+    return (
+      result.outreach_draft ||
+      result.summary ||
+      result.shortlist ||
+      result.score ||
+      result.output ||
+      result.message ||
+      JSON.stringify(result)   // last resort: show raw JSON
+    ) || fallback;
+  };
+
+
+  // ── Normalize task fields from backend ────────────────────────────────────
+  const normalizeTask = (t) => ({
+    ...t,
+    status: ["awaiting_approval", "completed", "supervisor_completed"].includes(t.status)
+      ? "pending"
+      : t.status,
+    job_title: t.job_title || t.title || t.job?.title || "AI Task",
+    ai_output: t.ai_output || extractOutput(t.result) || t.output || t.summary || t.outreach_draft || "(AI output pending...)",
+    task_type: t.task_type || t.type || "shortlist",
+  });
+
+
   // ── WebSocket connection for a single task ─────────────────────────────────
   const connectWebSocket = (task_id) => {
-    // Don't open a duplicate socket
     if (socketRefs.current[task_id]) return;
 
     const ws = new WebSocket(`${WS_BASE}/task/${task_id}`);
     socketRefs.current[task_id] = ws;
 
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      try {
+        const data = JSON.parse(event.data);
+        const steps = data.steps_completed || [];
+        const isTerminal =
+          data.event === "task_done" ||
+          data.event === "task_complete" ||
+          steps.includes("supervisor_completed") ||
+          data.status === "awaiting_approval" ||
+          data.status === "completed";
 
-      if (data.event === "task_update") {
-        setLiveStatus(prev => ({
-          ...prev,
-          [task_id]: {
-            status: data.status,
-            steps_completed: data.steps_completed || [],
+        if (data.event === "task_update" || data.event === "task_done" || data.event === "task_complete") {
+          setLiveStatus(prev => ({
+            ...prev,
+            [task_id]: {
+              status: data.status,
+              steps_completed: steps,
+            }
+          }));
+
+          // If we have a result, update the task output
+          if (data.result) {
+            const newOutput = extractOutput(data.result);
+            setTasks(prev => prev.map(t =>
+              t.task_id === task_id
+                ? { ...t, ai_output: newOutput || t.ai_output }
+                : t
+            ));
           }
-        }));
 
-        // If result arrived, update the task's ai_output too
-        if (data.result) {
-          setTasks(prev => prev.map(t =>
-            t.task_id === task_id
-              ? { ...t, status: data.status, ai_output: data.result?.outreach_draft || data.result?.summary || t.ai_output }
-              : t
-          ));
+          // ✅ If terminal state, flip to "pending" so HITL buttons show
+          if (isTerminal) {
+            setTasks(prev => prev.map(t =>
+              t.task_id === task_id
+                ? {
+                    ...t,
+                    status: "pending",
+                    ai_output: extractOutput(data.result) || t.ai_output,
+                  }
+                : t
+            ));
+            // Clean up the socket so isLive becomes false
+            ws.close();
+            delete socketRefs.current[task_id];
+            // Force re-render by clearing liveStatus for this task
+            setLiveStatus(prev => {
+              const next = { ...prev };
+              delete next[task_id];
+              return next;
+            });
+          }
         }
-      }
 
-      if (data.event === "task_done") {
-        setLiveStatus(prev => ({
-          ...prev,
-          [task_id]: { status: data.status, steps_completed: [] }
-        }));
-        if (data.result) {
-          setTasks(prev => prev.map(t =>
-            t.task_id === task_id
-              ? { ...t, status: "pending", ai_output: data.result?.outreach_draft || data.result?.summary || t.ai_output }
-              : t
-          ));
+        if (data.event === "error") {
+          ws.close();
+          delete socketRefs.current[task_id];
+          setLiveStatus(prev => {
+            const next = { ...prev };
+            delete next[task_id];
+            return next;
+          });
         }
-        // Close and clean up — task is terminal
-        ws.close();
-        delete socketRefs.current[task_id];
-      }
-
-      if (data.event === "error") {
-        ws.close();
-        delete socketRefs.current[task_id];
+      } catch (e) {
+        console.error("WS parse error", e);
       }
     };
 
     ws.onerror = () => {
       delete socketRefs.current[task_id];
+      setLiveStatus(prev => {
+        const next = { ...prev };
+        delete next[task_id];
+        return next;
+      });
     };
 
     ws.onclose = () => {
@@ -142,26 +199,45 @@ export default function AIReview({ onNavigate }) {
     };
   };
 
+
   // ── Load tasks on mount ────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
+        const task_id = localStorage.getItem("latest_task_id");
+
+        if (!task_id) {
+          setTasks([]);
+          setLoading(false);
+          return;
+        }
+
         const res = await fetch(`${API_BASE}/ai/status`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ recruiter_id })
+          body: JSON.stringify({ task_id })
         });
         const data = await res.json();
-        const fetched = data.tasks || (Array.isArray(data) ? data : []);
-        setTasks(fetched);
 
-        // Open a WebSocket for every task that is still in-progress
-        fetched.forEach(task => {
+        const fetched = data.tasks
+          ? data.tasks
+          : Array.isArray(data)
+            ? data
+            : data.task_id
+              ? [data]
+              : [];
+
+        const normalized = fetched.map(normalizeTask);
+        setTasks(normalized);
+
+        // Open WebSocket for tasks that are still in-progress
+        normalized.forEach(task => {
           if (["pending", "running", "submitted"].includes(task.status)) {
             connectWebSocket(task.task_id);
           }
         });
+
       } catch {
         setTasks([
           {
@@ -189,12 +265,12 @@ export default function AIReview({ onNavigate }) {
     };
     load();
 
-    // Cleanup all sockets on unmount
     return () => {
       Object.values(socketRefs.current).forEach(ws => ws.close());
       socketRefs.current = {};
     };
   }, []);
+
 
   // ── HITL Actions ───────────────────────────────────────────────────────────
   const handleApprove = async (task_id) => {
@@ -205,7 +281,7 @@ export default function AIReview({ onNavigate }) {
         body: JSON.stringify({ task_id, recruiter_id, action: "approve" })
       });
     } catch { }
-    setTasks(tasks.map(t => t.task_id === task_id ? { ...t, status: "approved" } : t));
+    setTasks(prev => prev.map(t => t.task_id === task_id ? { ...t, status: "approved" } : t));
     notify("Task approved!");
   };
 
@@ -217,7 +293,7 @@ export default function AIReview({ onNavigate }) {
         body: JSON.stringify({ task_id, recruiter_id, action: "reject" })
       });
     } catch { }
-    setTasks(tasks.map(t => t.task_id === task_id ? { ...t, status: "rejected" } : t));
+    setTasks(prev => prev.map(t => t.task_id === task_id ? { ...t, status: "rejected" } : t));
     notify("Task rejected.");
   };
 
@@ -229,7 +305,7 @@ export default function AIReview({ onNavigate }) {
         body: JSON.stringify({ task_id, recruiter_id, action: "edit", edited_output: editContent })
       });
     } catch { }
-    setTasks(tasks.map(t =>
+    setTasks(prev => prev.map(t =>
       t.task_id === task_id ? { ...t, status: "edited", ai_output: editContent } : t
     ));
     setEditingId(null);
@@ -237,11 +313,13 @@ export default function AIReview({ onNavigate }) {
     notify("Edit saved and approved!");
   };
 
+
   const filteredTasks = filter === "all"
     ? tasks
     : tasks.filter(t => t.status === filter || t.task_type === filter);
 
   const pendingCount = tasks.filter(t => t.status === "pending").length;
+
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -305,7 +383,9 @@ export default function AIReview({ onNavigate }) {
 
           {!loading && filteredTasks.length === 0 && (
             <div style={{ ...s.card, textAlign: "center", color: brand.muted, fontSize: "14px", padding: "40px" }}>
-              No tasks found for this filter.
+              {localStorage.getItem("latest_task_id")
+                ? "No tasks found for this filter."
+                : "No AI tasks yet. Submit a job from the AI Request page first."}
             </div>
           )}
 
@@ -324,7 +404,7 @@ export default function AIReview({ onNavigate }) {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: "15px", color: brand.text }}>
-                      {task.job_title || "Untitled Job"}
+                      {task.job_title}
                     </div>
                     <div style={{ fontSize: "12px", color: brand.muted, marginTop: "2px" }}>
                       Task ID: {task.task_id} · {new Date(task.created_at).toLocaleDateString()}
@@ -334,8 +414,8 @@ export default function AIReview({ onNavigate }) {
                     <span style={{ ...s.badge, ...(taskColors[task.task_type] || {}) }}>
                       {task.task_type}
                     </span>
-                    <span style={{ ...s.badge, ...(taskColors[displayStatus] || {}) }}>
-                      {isLive && "🔴 "}{displayStatus}
+                    <span style={{ ...s.badge, ...(taskColors[displayStatus] || taskColors.pending) }}>
+                      {isLive ? "🔴 " : ""}{isLive ? displayStatus : task.status}
                     </span>
                   </div>
                 </div>
@@ -353,9 +433,7 @@ export default function AIReview({ onNavigate }) {
                 )}
 
                 {isLive && (!live?.steps_completed || live.steps_completed.length === 0) && (
-                  <div style={s.liveBar}>
-                    ⚡ Agent working...
-                  </div>
+                  <div style={s.liveBar}>⚡ Agent working...</div>
                 )}
 
                 {/* AI Output */}
@@ -369,14 +447,16 @@ export default function AIReview({ onNavigate }) {
                     />
                   </div>
                 ) : (
-                  <div style={{ backgroundColor: "#F9F9F9", borderRadius: "8px", padding: "14px",
+                  <div style={{
+                    backgroundColor: "#F9F9F9", borderRadius: "8px", padding: "14px",
                     fontSize: "14px", color: brand.text, lineHeight: 1.7, whiteSpace: "pre-wrap",
-                    border: `1px solid ${brand.border}`, marginTop: "10px" }}>
+                    border: `1px solid ${brand.border}`, marginTop: "10px"
+                  }}>
                     {task.ai_output}
                   </div>
                 )}
 
-                {/* Actions */}
+                {/* HITL Buttons — only when not live and status is pending */}
                 {task.status === "pending" && !isLive && (
                   <div style={{ display: "flex", gap: "10px", marginTop: "14px", flexWrap: "wrap" }}>
                     {editingId === task.task_id ? (
@@ -398,7 +478,8 @@ export default function AIReview({ onNavigate }) {
                   </div>
                 )}
 
-                {task.status !== "pending" && (
+                {/* Status message for resolved tasks */}
+                {task.status !== "pending" && !isLive && (
                   <div style={{ marginTop: "12px", fontSize: "13px", color: brand.muted }}>
                     {task.status === "approved" && "✓ You approved this output."}
                     {task.status === "edited"   && "✎ You edited and approved this output."}

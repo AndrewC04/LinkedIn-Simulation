@@ -1,7 +1,11 @@
 # agents/supervisor.py — Hiring Assistant supervisor agent
 
 import asyncio
+import logging
 import os
+
+import pymysql
+import requests
 from openai import OpenAI
 from pymongo import MongoClient
 from models.schemas import (
@@ -11,6 +15,8 @@ from models.schemas import (
 from agents.resume_parser import parse_resume
 from agents.job_matcher import match_candidate
 from db.mongo import update_task_status, log_trace
+
+logger = logging.getLogger(__name__)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -25,27 +31,36 @@ _mongo_port = os.getenv("MONGO_PORT", "27017")
 _profile_client = MongoClient(f"mongodb://{_mongo_user}:{_mongo_pass}@{_mongo_host}:{_mongo_port}")
 _members_col = _profile_client["linkedin"]["members"]
 
-# Mock job store — in production this comes from Job Service (:8002)
-MOCK_JOBS = {
-    "job001": {
-        "title":           "Senior Data Engineer",
-        "skills_required": ["python", "kafka", "spark", "aws", "mongodb"],
-        "seniority_level": "senior",
-        "location":        "San Francisco, CA"
-    },
-    "job002": {
-        "title":           "ML Engineer",
-        "skills_required": ["python", "machine learning", "deep learning", "pytorch", "aws"],
-        "seniority_level": "mid",
-        "location":        "Remote"
-    },
-    "job003": {
-        "title":           "Backend Engineer",
-        "skills_required": ["python", "fastapi", "docker", "mongodb", "kafka"],
-        "seniority_level": "mid",
-        "location":        "New York, NY"
-    }
-}
+# Job Service URL
+JOB_SERVICE_URL = os.getenv("JOB_SERVICE_URL", "http://job-api:8002")
+
+
+# ── MySQL connection helper ───────────────────────────────────────────────────
+def get_mysql_conn():
+    return pymysql.connect(
+        host=os.getenv("MYSQL_HOST", "mysql"),
+        port=int(os.getenv("MYSQL_PORT", "3306")),
+        user=os.getenv("MYSQL_USER", "root"),
+        password=os.getenv("MYSQL_PASSWORD", "rootpassword"),
+        database="linkedin_db",
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
+
+def get_job(job_id: str) -> dict | None:
+    """Fetch job details from the Job Service."""
+    try:
+        response = requests.post(
+            f"{JOB_SERVICE_URL}/jobs/get",
+            json={"job_id": job_id, "actor_id": "ai-service"},
+            timeout=5
+        )
+        if response.status_code == 200:
+            return response.json()
+        return None
+    except Exception as e:
+        logger.error(f"Failed to fetch job {job_id}: {e}")
+        return None
 
 
 def get_resume_text(candidate_id: str) -> str | None:
@@ -56,8 +71,54 @@ def get_resume_text(candidate_id: str) -> str | None:
     return None
 
 
-# ── Outreach Draft Generator (LLM-powered) ────────────────────────────────────
+# ── Fetch candidate IDs from MySQL applications table ─────────────────────────
+def get_candidates_for_job(job_id: str) -> list[str]:
+    """Fetch applicant member_ids from MySQL applications table."""
+    try:
+        conn = get_mysql_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT member_id FROM applications WHERE job_id = %s AND status != 'rejected'",
+                (job_id,)
+            )
+            rows = cur.fetchall()
+        conn.close()
+        return [r["member_id"] for r in rows]
+    except Exception as e:
+        logger.error(f"MySQL candidates fetch error: {e}")
+        return []
 
+
+# ── Fallback: build resume text from MySQL member profile ─────────────────────
+def get_resume_text_from_mysql(candidate_id: str) -> str | None:
+    """Build resume text from MySQL member profile as fallback."""
+    try:
+        conn = get_mysql_conn()
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM members WHERE member_id = %s", (candidate_id,))
+            member = cur.fetchone()
+            cur.execute("SELECT * FROM member_experience WHERE member_id = %s", (candidate_id,))
+            experiences = cur.fetchall()
+        conn.close()
+        if not member:
+            return None
+        lines = [
+            f"Name: {member.get('first_name', '')} {member.get('last_name', '')}",
+            f"Headline: {member.get('headline', '')}",
+            f"Skills: {member.get('skills', '')}",
+        ]
+        for exp in experiences:
+            lines.append(
+                f"Experience: {exp.get('title', '')} at {exp.get('company', '')} "
+                f"({exp.get('start_date', '')} - {exp.get('end_date', 'present')})"
+            )
+        return "\n".join(lines)
+    except Exception as e:
+        logger.error(f"MySQL resume fetch error: {e}")
+        return None
+
+
+# ── Outreach Draft Generator (LLM-powered) ────────────────────────────────────
 def generate_outreach(
     candidate_name: str,
     job_title: str,
@@ -91,7 +152,6 @@ Make it specific to their background, not generic."""
 
 
 # ── Supervisor Pipeline ───────────────────────────────────────────────────────
-
 async def run_supervisor(
     task_id: str,
     trace_id: str,
@@ -116,22 +176,28 @@ async def run_supervisor(
     })
 
     # ── Step 2: Fetch job details ─────────────────────────────────────────────
-    job = MOCK_JOBS.get(job_id)
+    job = get_job(job_id)
     if not job:
         update_task_status(task_id=task_id, status="failed", step="job_not_found")
         raise ValueError(f"Job {job_id} not found")
 
     update_task_status(task_id=task_id, status="running", step="job_fetched")
 
+    # ✅ Step 2b: Auto-fetch candidates from MySQL if none provided
+    if not candidate_ids:
+        candidate_ids = get_candidates_for_job(job_id)
+        log_trace(trace_id, "candidates_fetched_from_db", {"count": len(candidate_ids)})
+
     # ── Step 3: Process each candidate ───────────────────────────────────────
     shortlisted = []
 
     for candidate_id in candidate_ids:
-        resume_text = get_resume_text(candidate_id)
+        # ✅ Try MongoDB first, fall back to MySQL profile
+        resume_text = get_resume_text(candidate_id) or get_resume_text_from_mysql(candidate_id)
         if not resume_text:
             log_trace(trace_id, "candidate_skipped", {
                 "candidate_id": candidate_id,
-                "reason": "no resume in MongoDB"
+                "reason": "no resume found in MongoDB or MySQL"
             })
             continue
 

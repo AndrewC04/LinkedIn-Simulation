@@ -22,7 +22,9 @@ from schemas import (
     ConnectionStatusResponse,
 )
 
+
 app = FastAPI(title="Connection Service", version="0.1.0")
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,9 +36,11 @@ app.add_middleware(
 producer = ConnectionsProducer()
 
 
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "service": "connections"}
+
 
 
 @app.post("/connections/requests", response_model=ConnectionStatusResponse)
@@ -54,6 +58,7 @@ def create_connection_request(request: ConnectionRequestCreate):
         idempotency_key=request.idempotency_key,
     )
     return conn
+
 
 
 @app.post(
@@ -75,6 +80,7 @@ def accept_connection_request(connection_id: str, request: ConnectionActionReque
     return conn
 
 
+
 @app.post(
     "/connections/{connection_id}/reject", response_model=ConnectionStatusResponse
 )
@@ -83,6 +89,7 @@ def reject_connection_request(connection_id: str, request: ConnectionActionReque
         return reject_connection(connection_id, request.actor_id)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
 
 
 @app.delete(
@@ -95,12 +102,14 @@ def withdraw_request(connection_id: str, requester_id: str = Query(...)):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+
 @app.delete("/connections/{connection_id}", response_model=ConnectionStatusResponse)
 def remove_existing_connection(connection_id: str, actor_id: str = Query(...)):
     try:
         return remove_connection(connection_id, actor_id)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
 
 
 @app.get("/members/{member_id}/connections", response_model=list[ConnectionListItem])
@@ -110,6 +119,7 @@ def get_connections(
     offset: int = Query(default=0, ge=0),
 ):
     return list_accepted_connections(member_id=member_id, limit=limit, offset=offset)
+
 
 
 @app.get(
@@ -124,6 +134,7 @@ def get_pending_received(
     return list_pending_received(member_id=member_id, limit=limit, offset=offset)
 
 
+
 @app.get(
     "/members/{member_id}/connections/pending-sent",
     response_model=list[ConnectionListItem],
@@ -136,9 +147,11 @@ def get_pending_sent(
     return list_pending_sent(member_id=member_id, limit=limit, offset=offset)
 
 
+
 @app.get("/connections/status", response_model=ConnectionStatusResponse | None)
 def get_status(member_a: str = Query(...), member_b: str = Query(...)):
     return get_connection_status(member_a, member_b)
+
 
 
 @app.get(
