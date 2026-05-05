@@ -187,7 +187,8 @@ def get_job(db: Session, job_id: str, increment_view: bool = False) -> dict:
     job, company_name = row
 
     if increment_view:
-        job.views_count += 1
+        from sqlalchemy import text
+        db.execute(text("UPDATE jobs SET views_count = views_count + 1 WHERE job_id = :job_id"), {"job_id": job_id})
         db.commit()
         db.refresh(job)
         # Invalidate search cache so listing reflects updated view count immediately
