@@ -56,3 +56,10 @@ jobs:
         run: |
           kubectl rollout restart deployment -n linkedin
           kubectl rollout status deployment -n linkedin --timeout=300s
+
+      - name: Create Kafka topics
+        run: |
+          KAFKA_POD=$(kubectl get pod -n linkedin -l app=kafka -o jsonpath='{.items[0].metadata.name}')
+          for topic in job.viewed job.saved job.applied job.created job.updated job.closed application.submitted application.status.updated message.sent connection.requested connection.accepted connection.rejected profile.viewed ai.requests ai.results analytics.events; do
+            kubectl exec -n linkedin $KAFKA_POD -- kafka-topics.sh --bootstrap-server kafka-broker:9092 --create --topic $topic --partitions 1 --replication-factor 1 2>/dev/null || true
+          done
