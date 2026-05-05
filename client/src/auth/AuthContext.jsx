@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 
 const AuthContext = createContext(null);
 const SESSION_KEY = "linkedin_sim_auth_session";
-const API = "http://localhost:8001";
+const API = "http://adfd79d807cdc4e96bb86f461a5bc2d0-4b9c3d7da87e2d61.elb.us-east-2.amazonaws.com:8001";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);

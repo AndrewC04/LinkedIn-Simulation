@@ -19,8 +19,8 @@ const taskColors = {
   failed:         { backgroundColor: "#fef2f2", color: "#dc2626" },
 };
 
-const WS_BASE = "ws://localhost:8006/ws";
-const API_BASE = "http://localhost:8006";
+const WS_BASE = "ws://ae75bd49118534be2a684f0f71f0564c-fd714fd6cdd0db22.elb.us-east-2.amazonaws.com:8006/ws";
+const API_BASE = "http://ae75bd49118534be2a684f0f71f0564c-fd714fd6cdd0db22.elb.us-east-2.amazonaws.com:8006";
 
 export default function AIReview({ onNavigate }) {
   const navigate = useNavigate();

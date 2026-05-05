@@ -69,7 +69,7 @@ export default function JobSearch() {
     localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(next));
     if (!exists) {
       try {
-        await fetch("http://127.0.0.1:8002/jobs/save", {
+        await fetch("http://a646a4c5e82b9472997248fb7c128493-a29f34db7d83c969.elb.us-east-2.amazonaws.com:8002/jobs/save", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ job_id: job.job_id, member_id: user?.userId }),

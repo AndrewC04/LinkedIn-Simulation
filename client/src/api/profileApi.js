@@ -1,5 +1,5 @@
-const PROFILE_API = "http://localhost:8001";
-const AUTH_API = "http://localhost:8001";
+const PROFILE_API = "http://adfd79d807cdc4e96bb86f461a5bc2d0-4b9c3d7da87e2d61.elb.us-east-2.amazonaws.com:8001";
+const AUTH_API = "http://adfd79d807cdc4e96bb86f461a5bc2d0-4b9c3d7da87e2d61.elb.us-east-2.amazonaws.com:8001";
 
 async function postJson(url, body) {
   const res = await fetch(url, {

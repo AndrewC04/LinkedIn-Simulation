@@ -1,4 +1,4 @@
-const JOBS_API = "http://127.0.0.1:8002";
+const JOBS_API = "http://a646a4c5e82b9472997248fb7c128493-a29f34db7d83c969.elb.us-east-2.amazonaws.com:8002";
 
 function extractErrorMessage(data, status) {
   if (!data) return `Request failed: ${status}`;

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import LinkedInNav from "../components/LinkedInNav.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 
-const API = "http://localhost:8003";
+const API = "http://aa7329fda3c2240879e987dc91a0e9d8-726efa2d8f64fd49.elb.us-east-2.amazonaws.com:8003";
 
 export default function SubmitApplication() {
   const { jobId } = useParams();

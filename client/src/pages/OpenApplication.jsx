@@ -479,7 +479,7 @@ export default function OpenApplication() {
                   <div style={styles.value}>
                     {application.resume_url ? (
                       <a
-                        href={`http://localhost:8003${application.resume_url}`}
+                        href={`http://aa7329fda3c2240879e987dc91a0e9d8-726efa2d8f64fd49.elb.us-east-2.amazonaws.com:8003${application.resume_url}`}
                         target="_blank"
                         rel="noreferrer"
                         style={styles.link}
@@ -497,7 +497,7 @@ export default function OpenApplication() {
                   <div style={styles.value}>
                     {application.cover_letter ? (
                       <a
-                        href={`http://localhost:8003${application.cover_letter}`}
+                        href={`http://aa7329fda3c2240879e987dc91a0e9d8-726efa2d8f64fd49.elb.us-east-2.amazonaws.com:8003${application.cover_letter}`}
                         target="_blank"
                         rel="noreferrer"
                         style={styles.link}

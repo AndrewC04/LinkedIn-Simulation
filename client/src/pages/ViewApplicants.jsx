@@ -169,7 +169,7 @@ export default function ViewApplicants() {
                       </td>
                       <td style={styles.td}>
                         <a
-                          href={`http://localhost:8003${app.resume_url}`}
+                          href={`http://aa7329fda3c2240879e987dc91a0e9d8-726efa2d8f64fd49.elb.us-east-2.amazonaws.com:8003${app.resume_url}`}
                           target="_blank"
                           rel="noreferrer"
                           style={styles.link}

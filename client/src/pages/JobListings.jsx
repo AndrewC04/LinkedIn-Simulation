@@ -54,7 +54,7 @@ export default function JobListings({ onNavigate }) {
   const loadJobs = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8002/jobs/all", {
+      const res = await fetch("http://a646a4c5e82b9472997248fb7c128493-a29f34db7d83c969.elb.us-east-2.amazonaws.com:8002/jobs/all", {
         method: "GET",
         headers: { "Content-Type": "application/json" }
       });

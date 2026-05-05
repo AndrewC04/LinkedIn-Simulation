@@ -56,7 +56,7 @@ export default function ApplicantsList({ onNavigate }) {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:8002/jobs/byRecruiter", {
+        const res = await fetch("http://a646a4c5e82b9472997248fb7c128493-a29f34db7d83c969.elb.us-east-2.amazonaws.com:8002/jobs/byRecruiter", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ recruiter_id })
         });
@@ -75,7 +75,7 @@ export default function ApplicantsList({ onNavigate }) {
     setSelectedJob(job);
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8005/applications/byJob", {
+      const res = await fetch("http://a55cb80cd2cbd486ca4773ae0be96669-49a6f0b64a9c73f6.elb.us-east-2.amazonaws.com:8005/applications/byJob", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ job_id: job.job_id })
       });

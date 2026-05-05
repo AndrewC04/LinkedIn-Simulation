@@ -1,4 +1,4 @@
-const MESSAGING_API = "http://localhost:8004";
+const MESSAGING_API = "http://ad756f07478d4478cb717ae8c9ad9f1e-afc6ae71ca5b65e2.elb.us-east-2.amazonaws.com:8004";
 
 function extractErrorMessage(data, status) {
   if (!data) return `Request failed: ${status}`;

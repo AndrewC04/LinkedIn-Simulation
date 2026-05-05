@@ -71,7 +71,7 @@ function RecruiterDashboard({ memberId }) {
         setLoading(true);
         setError("");
         // Fetch this recruiter's own jobs
-        const jobsRes = await fetch("http://127.0.0.1:8002/jobs/byRecruiter", {
+        const jobsRes = await fetch("http://a646a4c5e82b9472997248fb7c128493-a29f34db7d83c969.elb.us-east-2.amazonaws.com:8002/jobs/byRecruiter", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ recruiter_id: memberId, page: 1, page_size: 50 }),
@@ -81,7 +81,7 @@ function RecruiterDashboard({ memberId }) {
         // For each job get application count
         const jobStats = await Promise.all(myJobs.map(async (job) => {
           try {
-            const r = await fetch("http://127.0.0.1:8003/applications/byJob", {
+            const r = await fetch("http://aa7329fda3c2240879e987dc91a0e9d8-726efa2d8f64fd49.elb.us-east-2.amazonaws.com:8003/applications/byJob", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -233,7 +233,7 @@ function MemberDashboard({ memberId }) {
         setProfileViewsPerDay(pvRes?.data || []);
 
         // Fetch real application list with job names from application service
-        const appRes = await fetch("http://127.0.0.1:8003/applications/byMember", {
+        const appRes = await fetch("http://aa7329fda3c2240879e987dc91a0e9d8-726efa2d8f64fd49.elb.us-east-2.amazonaws.com:8003/applications/byMember", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

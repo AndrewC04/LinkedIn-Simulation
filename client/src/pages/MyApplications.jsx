@@ -66,7 +66,7 @@ export default function MyApplications({ onNavigate }) {
   const loadApplications = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8005/applications/byMember", {
+      const res = await fetch("http://a55cb80cd2cbd486ca4773ae0be96669-49a6f0b64a9c73f6.elb.us-east-2.amazonaws.com:8005/applications/byMember", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ member_id })

@@ -1,6 +1,6 @@
-const AUTH_API = "http://localhost:8005";          // login + submit
-const APPLICATIONS_API = "http://localhost:8003";  // queries
-const JOBS_API = "http://localhost:8002";
+const AUTH_API = "http://a55cb80cd2cbd486ca4773ae0be96669-49a6f0b64a9c73f6.elb.us-east-2.amazonaws.com:8005";          // login + submit
+const APPLICATIONS_API = "http://aa7329fda3c2240879e987dc91a0e9d8-726efa2d8f64fd49.elb.us-east-2.amazonaws.com:8003";  // queries
+const JOBS_API = "http://a646a4c5e82b9472997248fb7c128493-a29f34db7d83c969.elb.us-east-2.amazonaws.com:8002";
 
 const SESSION_KEY = "linkedin_sim_auth_session";
 

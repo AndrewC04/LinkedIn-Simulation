@@ -1,4 +1,4 @@
-const ANALYTICS_API = "http://127.0.0.1:8005";
+const ANALYTICS_API = "http://a55cb80cd2cbd486ca4773ae0be96669-49a6f0b64a9c73f6.elb.us-east-2.amazonaws.com:8005";
 
 async function postJson(path, body) {
   const res = await fetch(`${ANALYTICS_API}${path}`, {

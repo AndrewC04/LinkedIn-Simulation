@@ -1,4 +1,4 @@
-const AI_BASE = "http://localhost:8006";
+const AI_BASE = "http://ae75bd49118534be2a684f0f71f0564c-fd714fd6cdd0db22.elb.us-east-2.amazonaws.com:8006";
 
 export async function submitAITask({ job_id, recruiter_id, candidate_ids, resumes, trace_id }) {
   const res = await fetch(`${AI_BASE}/ai/submit`, {

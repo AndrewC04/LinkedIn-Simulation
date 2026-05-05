@@ -70,7 +70,7 @@ export default function ManageJobs({ onNavigate }) {
     };
     try {
       if (editingId) {
-        const res = await fetch(`http://localhost:8002/jobs/update`, {
+        const res = await fetch(`http://a646a4c5e82b9472997248fb7c128493-a29f34db7d83c969.elb.us-east-2.amazonaws.com:8002/jobs/update`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ job_id: editingId, ...payload })
         });
@@ -79,7 +79,7 @@ export default function ManageJobs({ onNavigate }) {
           notify("Job updated successfully!");
         }
       } else {
-        const res = await fetch(`http://localhost:8002/jobs/create`, {
+        const res = await fetch(`http://a646a4c5e82b9472997248fb7c128493-a29f34db7d83c969.elb.us-east-2.amazonaws.com:8002/jobs/create`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
@@ -112,7 +112,7 @@ export default function ManageJobs({ onNavigate }) {
 
   const handleClose = async (job_id) => {
     try {
-      await fetch(`http://localhost:8002/jobs/close`, {
+      await fetch(`http://a646a4c5e82b9472997248fb7c128493-a29f34db7d83c969.elb.us-east-2.amazonaws.com:8002/jobs/close`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ job_id })
       });
@@ -126,7 +126,7 @@ export default function ManageJobs({ onNavigate }) {
   const loadJobs = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8002/jobs/byRecruiter`, {
+      const res = await fetch(`http://a646a4c5e82b9472997248fb7c128493-a29f34db7d83c969.elb.us-east-2.amazonaws.com:8002/jobs/byRecruiter`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ recruiter_id })
       });
