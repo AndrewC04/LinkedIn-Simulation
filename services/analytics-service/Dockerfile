@@ -13,4 +13,4 @@ COPY services/analytics-service /app/services/analytics-service
 
 WORKDIR /app/services/analytics-service
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8005"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8005", "--workers", "4"]

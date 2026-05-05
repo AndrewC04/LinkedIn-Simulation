@@ -12,4 +12,4 @@ COPY services/job-service /app/services/job-service
 
 WORKDIR /app/services/job-service
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002", "--workers", "4"]
