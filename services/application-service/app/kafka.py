@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 KAFKA_ENABLED = os.getenv("ENABLE_KAFKA", "false").lower() == "true"
-KAFKA_BROKER = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
+KAFKA_BROKER = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka-broker:9092")
 
 _producer = None
 
@@ -17,7 +17,8 @@ def get_producer():
     if _producer is None:
         _producer = Producer({
             "bootstrap.servers": KAFKA_BROKER,
-            "acks": "all",
+            "acks": "1",
+            "linger.ms": "5",
         })
     return _producer
 
@@ -49,7 +50,7 @@ def emit_event(event_type: str, actor_id: str, entity_type: str, entity_id: str,
             key=str(entity_id).encode("utf-8"),
             value=json.dumps(event).encode("utf-8"),
         )
-        producer.flush()
+        producer.flush(timeout=0.5)
         logger.info("[kafka] Published: %s -> topic: %s", event_type, topic)
     except Exception as e:
         logger.warning("[kafka] ERROR publishing %s: %s", event_type, e)
