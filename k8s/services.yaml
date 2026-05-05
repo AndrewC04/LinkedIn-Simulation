@@ -1,0 +1,314 @@
+# Profile API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: profile-api
+  namespace: linkedin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: profile-api
+  template:
+    metadata:
+      labels:
+        app: profile-api
+    spec:
+      containers:
+      - name: profile-api
+        image: 425449348496.dkr.ecr.us-east-2.amazonaws.com/linkedin/profile-api:latest
+        ports:
+        - containerPort: 8001
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: kafka:9092
+        - name: MYSQL_HOST
+          value: mysql
+        - name: REDIS_HOST
+          value: redis
+        - name: REDIS_PASSWORD
+          value: redispassword
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: profile-api
+  namespace: linkedin
+spec:
+  selector:
+    app: profile-api
+  ports:
+  - port: 8001
+---
+# Job API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: job-api
+  namespace: linkedin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: job-api
+  template:
+    metadata:
+      labels:
+        app: job-api
+    spec:
+      containers:
+      - name: job-api
+        image: 425449348496.dkr.ecr.us-east-2.amazonaws.com/linkedin/job-api:latest
+        ports:
+        - containerPort: 8002
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: kafka:9092
+        - name: KAFKA_ENABLED
+          value: "true"
+        - name: MYSQL_HOST
+          value: mysql
+        - name: REDIS_HOST
+          value: redis
+        - name: REDIS_PASSWORD
+          value: redispassword
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: job-api
+  namespace: linkedin
+spec:
+  selector:
+    app: job-api
+  ports:
+  - port: 8002
+---
+# Application API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: application-api
+  namespace: linkedin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: application-api
+  template:
+    metadata:
+      labels:
+        app: application-api
+    spec:
+      containers:
+      - name: application-api
+        image: 425449348496.dkr.ecr.us-east-2.amazonaws.com/linkedin/application-api:latest
+        ports:
+        - containerPort: 8003
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: kafka:9092
+        - name: ENABLE_KAFKA
+          value: "true"
+        - name: MYSQL_HOST
+          value: mysql
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: application-api
+  namespace: linkedin
+spec:
+  selector:
+    app: application-api
+  ports:
+  - port: 8003
+---
+# Messaging API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messaging-api
+  namespace: linkedin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: messaging-api
+  template:
+    metadata:
+      labels:
+        app: messaging-api
+    spec:
+      containers:
+      - name: messaging-api
+        image: 425449348496.dkr.ecr.us-east-2.amazonaws.com/linkedin/messaging-api:latest
+        ports:
+        - containerPort: 8004
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: kafka:9092
+        - name: MYSQL_HOST
+          value: mysql
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: messaging-api
+  namespace: linkedin
+spec:
+  selector:
+    app: messaging-api
+  ports:
+  - port: 8004
+---
+# Analytics API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-api
+  namespace: linkedin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analytics-api
+  template:
+    metadata:
+      labels:
+        app: analytics-api
+    spec:
+      containers:
+      - name: analytics-api
+        image: 425449348496.dkr.ecr.us-east-2.amazonaws.com/linkedin/analytics-api:latest
+        ports:
+        - containerPort: 8005
+        env:
+        - name: REDIS_HOST
+          value: redis
+        - name: REDIS_PASSWORD
+          value: redispassword
+        - name: MONGO_URI
+          value: mongodb://root:rootpassword@mongodb:27017/linkedin_events
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-api
+  namespace: linkedin
+spec:
+  selector:
+    app: analytics-api
+  ports:
+  - port: 8005
+---
+# Analytics Worker
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-worker
+  namespace: linkedin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analytics-worker
+  template:
+    metadata:
+      labels:
+        app: analytics-worker
+    spec:
+      containers:
+      - name: analytics-worker
+        image: 425449348496.dkr.ecr.us-east-2.amazonaws.com/linkedin/analytics-worker:latest
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: kafka:9092
+        - name: MONGO_URI
+          value: mongodb://root:rootpassword@mongodb:27017/linkedin_events
+---
+# Connection API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connection-api
+  namespace: linkedin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connection-api
+  template:
+    metadata:
+      labels:
+        app: connection-api
+    spec:
+      containers:
+      - name: connection-api
+        image: 425449348496.dkr.ecr.us-east-2.amazonaws.com/linkedin/connection-api:latest
+        ports:
+        - containerPort: 8007
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: kafka:9092
+        - name: MYSQL_HOST
+          value: mysql
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: connection-api
+  namespace: linkedin
+spec:
+  selector:
+    app: connection-api
+  ports:
+  - port: 8007
+---
+# AI API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-api
+  namespace: linkedin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-api
+  template:
+    metadata:
+      labels:
+        app: ai-api
+    spec:
+      containers:
+      - name: ai-api
+        image: 425449348496.dkr.ecr.us-east-2.amazonaws.com/linkedin/ai-api:latest
+        ports:
+        - containerPort: 8006
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: kafka:9092
+        - name: OPENAI_API_KEY
+          value: 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
+        - name: MONGO_HOST
+          value: mongodb
+        - name: MONGO_PORT
+          value: "27017"
+        - name: MONGO_USER
+          value: root
+        - name: MONGO_PASSWORD
+          value: rootpassword
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-api
+  namespace: linkedin
+spec:
+  selector:
+    app: ai-api
+  ports:
+  - port: 8006
+# Note: Apply these env patches after deployment
+# kubectl set env deployment/job-api deployment/profile-api deployment/application-api deployment/messaging-api deployment/connection-api -n linkedin DATABASE_URL="mysql+pymysql://appuser:apppassword@mysql:3306/linkedin_db"
