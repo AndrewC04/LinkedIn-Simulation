@@ -235,6 +235,8 @@ spec:
           value: redispassword
         - name: MONGO_URI
           value: mongodb://root:rootpassword@mongodb:27017/linkedin_events
+        - name: KAFKA_BROKER
+          value: kafka-broker:9092
         - name: MYSQL_HOST
           value: mysql
         - name: MYSQL_PORT
