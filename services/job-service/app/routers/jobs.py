@@ -32,7 +32,7 @@ def create_job(request: JobCreateRequest, db: Session = Depends(get_db)):
 
 @router.post("/get")
 def get_job(request: JobGetRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    result = crud.get_job(db, request.job_id, increment_view=False)
+    result = crud.get_job(db, request.job_id, increment_view=True)
     background_tasks.add_task(
         producer.publish,
         topic="job.viewed",
